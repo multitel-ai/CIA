@@ -1,0 +1,9 @@
+diffusers==0.14.0 
+transformers
+xformers
+opencv-contrib-python
+controlnet_aux
+numpy
+pillow
+accelerate
+matplotlib 
