@@ -44,12 +44,15 @@ sdcn = SDCN(
     2
 )
 
-i = 0
+
+extractions = []
 for image in images:
     # Feature Extraction
-    condition = OpenPose().detect(np.array(image))
-    #condition.save(results_path / f"condition.png")
-
+    extractions += [OpenPose().detect(np.array(image))]
+    # extractions[-1].save(results_path / f"condition.png")
+    
+i = 0
+for i, condition in enumerate(extractions): 
     # generate with stable diffusion
     output = sdcn.gen(condition, positive_prompt, negative_prompt)
 

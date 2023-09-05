@@ -25,7 +25,7 @@ class SDCN:
         self.pipe.enable_model_cpu_offload()
         self.pipe.enable_xformers_memory_efficient_attention()
 
-    def gen(self, condition: np.array, positive_prompts: List[str], negative_prompts: List[str]):
+    def gen(self, condition: np.array | List[np.array], positive_prompts: List[str], negative_prompts: List[str]):
         generator = [torch.Generator(device="cpu").manual_seed(self.seed) for i in range(len(positive_prompts))]
 
         output = self.pipe(
