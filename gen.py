@@ -1,12 +1,14 @@
 import cv2
+import glob
 import os
+
+from diffusers.utils import load_image
 import numpy as np
 from pathlib import Path
+from PIL import Image
+
 from extractors import OpenPose
 from generators import SDCN
-from PIL import Image
-from diffusers.utils import load_image
-import glob
 
 
 # BASE PATHS, please used these when specifying paths
@@ -28,9 +30,21 @@ images = [load_image(image_path) for image_path in images]
 ## either number of images
 ## or in case of 1 original image, it's the number of generations
 positive_prompt = ["Sandra Oh body", "Kim Kardashian body", "rihanna ", "taylor swift"]
-positive_prompt = [prompt + " wearing jeans and a shirt, smiling, with a realistic face, and hands clapping" for prompt in positive_prompt]
+positive_prompt = [
+    prompt + " wearing jeans and a shirt, smiling, with a realistic face, and hands clapping" 
+    for prompt in positive_prompt
+]
 
-negative_prompt = ["monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic"] * len(positive_prompt)
+negative_prompt = [
+    "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion, no umbrella,"
+    "distortion, bad quality, lowres, cropped,worst quality, bad focus, blurry, ad compression, bad artifact,"
+    "bad pixel, deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime:1.4),"
+    " close up, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated,"
+    "extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated,"
+    "bad anatomy, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs,"
+    "extra arms, extra legs, fused fingers, too many fingers, long neck, no cars, no people, illustration, painting,"
+    "drawing, art, sketch, cartoon, anime, deformation, distorsion",
+] * len(positive_prompt)
 
 # Specify the results path
 results_path = DATA_PATH / "data" / "openpose1"
