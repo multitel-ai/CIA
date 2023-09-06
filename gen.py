@@ -1,78 +1,100 @@
+import argparse
 import cv2
+import hydra
 import glob
 import os
+from omegaconf import DictConfig, OmegaConf
+from typing import Dict, List
 
 from diffusers.utils import load_image
 import numpy as np
 from pathlib import Path
 from PIL import Image
 
-from extractors import OpenPose
+from extractors import * 
 from generators import SDCN
 
 
-# BASE PATHS, please used these when specifying paths
-BASE_PATH = Path(__file__).parent.resolve()
-DATA_PATH = BASE_PATH / "bank"
+# Best clear way that I have to do this for the moment
+extractors_dict = {
+    'canny': Canny,
+    'openpose': OpenPose,
+    'fusing_openpose': OpenPose,
+}
 
-# Loading COCO should be here somwhere
-formats = ['jpg', 'jpeg', 'png']
-images = []
-for format in formats:
-    images += [ 
-        *glob.glob( str((DATA_PATH / "data" / "real").absolute()) + f'/*.{format}')
-    ]
-images = [load_image(image_path) for image_path in images]
+def find_model_name(name: str, l: List[Dict[str, str]]) -> str:
+    for small_dict in l:
+        if name in small_dict:
+            return small_dict[name]
+    return None
 
-# We should explore what prompts are better ? Let's write a prompts generator
-# number of prompts in the list = 
-## either number of images
-## or in case of 1 original image, it's the number of generations
-positive_prompt = ["Sandra Oh body", "Kim Kardashian body", "rihanna ", "taylor swift"]
-positive_prompt = [
-    prompt + " wearing jeans and a shirt, smiling, with a realistic face, and hands clapping" 
-    for prompt in positive_prompt
-]
+@hydra.main(version_base=None, config_path="conf", config_name="config")
+def main(cfg : DictConfig) -> None:
+    # BASE PATHS, please used these when specifying paths
+    data_path = cfg['data_path']
+    REAL_DATA_PATH = Path(data_path['real'])
+    GEN_DATA_PATH =  Path(data_path['base']) / data_path['generated']
 
-negative_prompt = [
-    "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion, no umbrella,"
-    "distortion, bad quality, lowres, cropped,worst quality, bad focus, blurry, ad compression, bad artifact,"
-    "bad pixel, deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime:1.4),"
-    " close up, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated,"
-    "extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated,"
-    "bad anatomy, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs,"
-    "extra arms, extra legs, fused fingers, too many fingers, long neck, no cars, no people, illustration, painting,"
-    "drawing, art, sketch, cartoon, anime, deformation, distorsion",
-] * len(positive_prompt)
-
-
-def main(path, model=None):
     # Specify the results path
-    results_path = DATA_PATH / "data" / path 
-    (results_path).mkdir(parents=True, exist_ok=True)
+    (GEN_DATA_PATH).mkdir(parents=True, exist_ok=True)
 
-    # sdcn = SDCN("lllyasviel/sd-controlnet-canny")
-    # sdcn = SDCN("lllyasviel/sd-controlnet-openpose")
-    if model is None:
-        model = SDCN(
-            "runwayml/stable-diffusion-v1-5",
-            "fusing/stable-diffusion-v1-5-controlnet-openpose",
-            2
-        )
+    # Loading COCO should be here somwhere
+    formats = cfg['image_formats'] 
+    images = []
+    for format in formats:
+        images += [ 
+            *glob.glob(str(REAL_DATA_PATH.absolute()) + f'/*.{format}')
+        ]
+    images = [load_image(image_path) for image_path in images]
 
-    extractions = []
-    for image in images:
-        # Feature Extraction
-        extractions += [OpenPose().detect(np.array(image))]
-        # extractions[-1].save(results_path / f"condition.png")
+
+    # We should explore what prompts are better ? Let's write a prompts generator
+    # number of prompts in the list = 
+    ## either number of images
+    ## or in case of 1 original image, it's the number of generations
+    prompt = cfg['prompt']
+    if isinstance(prompt['base'], str):
+        positive_prompt = [prompt['base'] + ' ' + prompt['modifier'] + ' ' + prompt['quality']]
+        negative_prompt = [''.join(prompt['negative'])]
+    else:
+        positive_prompt = [
+            pb + ' ' + prompt['modifier'] + ' ' + prompt['quality']
+            for pb in prompt['base']
+        ]
+        negative_prompt = [''.join(prompt['negative'])] * len(positive_prompt)
+
+    # Specify the model and feature extractor. Be aware that ideally both extractor and
+    # generator should be using the same feature.
+    model_data = cfg['model']
+    sd_model = model_data['sd']
+    
+    cn_model = find_model_name(model_data['cn_use'], model_data['cn'])
+    cn_model = cn_model if cn_model is not None else 'fusing/stable-diffusion-v1-5-controlnet-openpose'
+    
+    seed = model_data['seed']
+    device = model_data['device']
+
+    generator = SDCN(sd_model, cn_model, seed, device=device)
+    extractor = extractors_dict[
+        model_data['cn_use'] if model_data['cn_use'] in extractors_dict else 'canny'
+    ]()
+
+<<<<<<< HEAD
+
+=======
+>>>>>>> d8a611e... [IMP] models can now be asked to generate from a common api
+    # Generate from each image several synthetic images following the different prompts.
+    for i, image in enumerate(images):
+         # Feature extraction.
+        feature = extractor.extract(image)
+        feature.save(GEN_DATA_PATH / f"feature_{i+1}.png")
         
-    for i, condition in enumerate(extractions): 
-        # generate with stable diffusion
-        output = model.gen(condition, positive_prompt, negative_prompt)
+        # Generate with stable diffusion
+        output = generator.gen(feature, positive_prompt, negative_prompt)
 
         # save images
-        for _, img in enumerate(output.images):
-            img.save(results_path / f"{i}.png")
+        for j, img in enumerate(output.images):
+            img.save(GEN_DATA_PATH / f'{i+1}_{j+1}.png')
 
 
 if __name__ == '__main__':
