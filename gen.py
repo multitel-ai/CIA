@@ -22,7 +22,6 @@ for format in formats:
     images += [ 
         *glob.glob( str((DATA_PATH / "data" / "real").absolute()) + f'/*.{format}')
     ]
-
 images = [load_image(image_path) for image_path in images]
 
 # We should explore what prompts are better ? Let's write a prompts generator
@@ -46,31 +45,35 @@ negative_prompt = [
     "drawing, art, sketch, cartoon, anime, deformation, distorsion",
 ] * len(positive_prompt)
 
-# Specify the results path
-results_path = DATA_PATH / "data" / "openpose1"
-(results_path).mkdir(parents=True, exist_ok=True)
 
-# sdcn = SDCN("lllyasviel/sd-controlnet-canny")
-# sdcn = SDCN("lllyasviel/sd-controlnet-openpose")
-sdcn = SDCN(
-    "runwayml/stable-diffusion-v1-5",
-    "fusing/stable-diffusion-v1-5-controlnet-openpose",
-    2
-)
+def main(path, model=None):
+    # Specify the results path
+    results_path = DATA_PATH / "data" / path 
+    (results_path).mkdir(parents=True, exist_ok=True)
+
+    # sdcn = SDCN("lllyasviel/sd-controlnet-canny")
+    # sdcn = SDCN("lllyasviel/sd-controlnet-openpose")
+    if model is None:
+        model = SDCN(
+            "runwayml/stable-diffusion-v1-5",
+            "fusing/stable-diffusion-v1-5-controlnet-openpose",
+            2
+        )
+
+    extractions = []
+    for image in images:
+        # Feature Extraction
+        extractions += [OpenPose().detect(np.array(image))]
+        # extractions[-1].save(results_path / f"condition.png")
+        
+    for i, condition in enumerate(extractions): 
+        # generate with stable diffusion
+        output = model.gen(condition, positive_prompt, negative_prompt)
+
+        # save images
+        for _, img in enumerate(output.images):
+            img.save(results_path / f"{i}.png")
 
 
-extractions = []
-for image in images:
-    # Feature Extraction
-    extractions += [OpenPose().detect(np.array(image))]
-    # extractions[-1].save(results_path / f"condition.png")
-    
-i = 0
-for i, condition in enumerate(extractions): 
-    # generate with stable diffusion
-    output = sdcn.gen(condition, positive_prompt, negative_prompt)
-
-    # save images
-    for _, img in enumerate(output.images):
-        img.save(results_path / f"{i}.png")
-        i += 1
+if __name__ == '__main__':
+    main()
