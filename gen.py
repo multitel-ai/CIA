@@ -10,6 +10,35 @@ import glob
 import hydra
 from omegaconf import DictConfig
 
+SDCN_OPTIONS = {
+    'openpose': [
+        {
+            'sd': 'runwayml/stable-diffusion-v1-5',
+            'cn': 'lllyasviel/sd-controlnet-openpose',
+        },
+        {
+            'sd': 'runwayml/stable-diffusion-v1-5',
+            'cn': 'frankjoshua/control_v11p_sd15_openpose',
+        },
+        {
+            'sd': 'stabilityai/stable-diffusion-2-1',
+            'cn': 'thibaud/controlnet-sd21-openposev2-diffusers',
+        },
+        {
+            'sd': 'stabilityai/stable-diffusion-2-1',
+            'cn': 'thibaud/controlnet-sd21-openpose-diffusers',
+        },
+    ],
+    'canny': [
+        {
+            'sd': 'runwayml/stable-diffusion-v1-5',
+            'cn': 'lllyasviel/sd-controlnet-canny',
+        },
+    ],   
+}
+
+EXTRACTOR_TO_USE = 'openpose'
+MODEL_TO_USE = 1
 
 @hydra.main(config_name='config')
 def main(cfg: DictConfig) -> None:
@@ -34,7 +63,7 @@ def main(cfg: DictConfig) -> None:
     ## or in case of 1 original image, it's the number of generations
 
     positive_prompt = [prompt + cfg.positive_prompt for prompt in cfg.positive_prompt]
-
+    
     negative_prompt = cfg.negative_prompt * len(positive_prompt)
     # Specify the results path
     #results_path = DATA_PATH / "data" / "openpose1"
@@ -45,11 +74,10 @@ def main(cfg: DictConfig) -> None:
     results_path = DATA_PATH / cfg.model_name + new_experiment 
     (results_path).mkdir(parents=True, exist_ok=True)
 
-    # sdcn = SDCN("lllyasviel/sd-controlnet-canny")
-    # sdcn = SDCN("lllyasviel/sd-controlnet-openpose")
+
     sdcn = SDCN(
-        "runwayml/stable-diffusion-v1-5",
-        "fusing/stable-diffusion-v1-5-controlnet-openpose",
+        SDCN_OPTIONS[EXTRACTOR_TO_USE][MODEL_TO_USE]['sd'],
+        SDCN_OPTIONS[EXTRACTOR_TO_USE][MODEL_TO_USE]['cn'],
         cfg.seed
     )
 
