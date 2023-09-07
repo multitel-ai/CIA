@@ -7,6 +7,8 @@ from generators import SDCN
 from PIL import Image
 from diffusers.utils import load_image
 import glob
+import hydra
+from omegaconf import DictConfig
 
 SDCN_OPTIONS = {
     'openpose': [
@@ -38,52 +40,64 @@ SDCN_OPTIONS = {
 EXTRACTOR_TO_USE = 'openpose'
 MODEL_TO_USE = 1
 
-# BASE PATHS, please used these when specifying paths
-BASE_PATH = Path(__file__).parent.resolve()
-DATA_PATH = BASE_PATH / "bank"
+@hydra.main(config_name='config')
+def main(cfg: DictConfig) -> None:
+    # BASE PATHS, please used these when specifying paths
+    BASE_PATH = Path(__file__).parent.resolve()
+    DATA_PATH = BASE_PATH / "bank" / "data"
 
-# Loading COCO should be here somwhere
-formats = ['jpg', 'jpeg', 'png']
-images = []
-for format in formats:
-    images += [ 
-        *glob.glob( str((DATA_PATH / "data" / "real").absolute()) + f'/*.{format}')
-    ]
-
-images = [load_image(image_path) for image_path in images]
-
-# We should explore what prompts are better ? Let's write a prompts generator
-# number of prompts in the list = 
-## either number of images
-## or in case of 1 original image, it's the number of generations
-positive_prompt = ["Sandra Oh body", "Kim Kardashian body", "rihanna ", "taylor swift"]
-positive_prompt = [prompt + " wearing jeans and a shirt, smiling, with a realistic face, and hands clapping" for prompt in positive_prompt]
-
-negative_prompt = ["monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic"] * len(positive_prompt)
-
-# Specify the results path
-results_path = DATA_PATH / "data" / (EXTRACTOR_TO_USE + str(MODEL_TO_USE))
-(results_path).mkdir(parents=True, exist_ok=True)
-
-sdcn = SDCN(
-    SDCN_OPTIONS[EXTRACTOR_TO_USE][MODEL_TO_USE]['sd'],
-    SDCN_OPTIONS[EXTRACTOR_TO_USE][MODEL_TO_USE]['cn'],
-    1
-)
-
-
-extractions = []
-for image in images:
-    # Feature Extraction
-    extractions += [OpenPose().detect(np.array(image))]
-    # extractions[-1].save(results_path / f"condition.png")
+    # Loading COCO should be here somwhere
+    formats = cfg.formats
+    images = []
     
-i = 0
-for i, condition in enumerate(extractions[1:2]): 
-    # generate with stable diffusion
-    output = sdcn.gen(condition, positive_prompt, negative_prompt)
+    for format in formats:
+        images += [ 
+            *glob.glob( str((DATA_PATH / "data" / "real").absolute()) + f'/*.{format}')
+        ]
 
-    # save images
-    for _, img in enumerate(output.images):
-        img.save(results_path / f"{i}.png")
-        i += 1
+    images = [load_image(image_path) for image_path in images]
+
+    # We should explore what prompts are better ? Let's write a prompts generator
+    # number of prompts in the list = 
+    ## either number of images
+    ## or in case of 1 original image, it's the number of generations
+
+    positive_prompt = [prompt + cfg.positive_prompt for prompt in cfg.positive_prompt]
+    
+    negative_prompt = cfg.negative_prompt * len(positive_prompt)
+    # Specify the results path
+    #results_path = DATA_PATH / "data" / "openpose1"
+
+    openpose_dirs = sorted(glob.glob(str(DATA_PATH / "openpose*")))
+    latest_experiment = max(int(Path(dir).name[8:]) for dir in openpose_dirs)
+    new_experiment = latest_experiment + 1
+    results_path = DATA_PATH / cfg.model_name + new_experiment 
+    (results_path).mkdir(parents=True, exist_ok=True)
+
+
+    sdcn = SDCN(
+        SDCN_OPTIONS[EXTRACTOR_TO_USE][MODEL_TO_USE]['sd'],
+        SDCN_OPTIONS[EXTRACTOR_TO_USE][MODEL_TO_USE]['cn'],
+        cfg.seed
+    )
+
+    extractions = []
+    for image in images:
+        # Feature Extraction
+        extractions += [OpenPose().detect(np.array(image))]
+        # extractions[-1].save(results_path / f"condition.png")
+
+        
+    i = 0
+    for i, condition in enumerate(extractions): 
+        # generate with stable diffusion
+        output = sdcn.gen(condition, positive_prompt, negative_prompt)
+
+        # save images
+        for idx, img in enumerate(output.images):
+            image_name = Path(images[idx]).stem
+            img.save(results_path / f"{image_name}_{i%len(positive_prompt)}.png")
+            i += 1
+
+if __name__=="_main__":
+    main()
