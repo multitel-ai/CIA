@@ -7,7 +7,6 @@ controlnet_aux
 numpy
 pillow
 accelerate
-matplotlib 
+matplotlib
 hydra-core
-mediapipe
 pycocotools
