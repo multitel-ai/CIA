@@ -95,6 +95,5 @@ def main(cfg : DictConfig) -> None:
         for j, img in enumerate(output.images):
             img.save(GEN_DATA_PATH / f'{i+1}_{j+1}.png')
 
-
 if __name__ == '__main__':
     main()
