@@ -8,6 +8,35 @@ from PIL import Image
 from diffusers.utils import load_image
 import glob
 
+SDCN_OPTIONS = {
+    'openpose': [
+        {
+            'sd': 'runwayml/stable-diffusion-v1-5',
+            'cn': 'lllyasviel/sd-controlnet-openpose',
+        },
+        {
+            'sd': 'runwayml/stable-diffusion-v1-5',
+            'cn': 'frankjoshua/control_v11p_sd15_openpose',
+        },
+        {
+            'sd': 'stabilityai/stable-diffusion-2-1',
+            'cn': 'thibaud/controlnet-sd21-openposev2-diffusers',
+        },
+        {
+            'sd': 'stabilityai/stable-diffusion-2-1',
+            'cn': 'thibaud/controlnet-sd21-openpose-diffusers',
+        },
+    ],
+    'canny': [
+        {
+            'sd': 'runwayml/stable-diffusion-v1-5',
+            'cn': 'lllyasviel/sd-controlnet-canny',
+        },
+    ],   
+}
+
+EXTRACTOR_TO_USE = 'openpose'
+MODEL_TO_USE = 1
 
 # BASE PATHS, please used these when specifying paths
 BASE_PATH = Path(__file__).parent.resolve()
@@ -33,15 +62,13 @@ positive_prompt = [prompt + " wearing jeans and a shirt, smiling, with a realist
 negative_prompt = ["monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic"] * len(positive_prompt)
 
 # Specify the results path
-results_path = DATA_PATH / "data" / "openpose1"
+results_path = DATA_PATH / "data" / (EXTRACTOR_TO_USE + str(MODEL_TO_USE))
 (results_path).mkdir(parents=True, exist_ok=True)
 
-# sdcn = SDCN("lllyasviel/sd-controlnet-canny")
-# sdcn = SDCN("lllyasviel/sd-controlnet-openpose")
 sdcn = SDCN(
-    "runwayml/stable-diffusion-v1-5",
-    "fusing/stable-diffusion-v1-5-controlnet-openpose",
-    2
+    SDCN_OPTIONS[EXTRACTOR_TO_USE][MODEL_TO_USE]['sd'],
+    SDCN_OPTIONS[EXTRACTOR_TO_USE][MODEL_TO_USE]['cn'],
+    1
 )
 
 
@@ -52,7 +79,7 @@ for image in images:
     # extractions[-1].save(results_path / f"condition.png")
     
 i = 0
-for i, condition in enumerate(extractions): 
+for i, condition in enumerate(extractions[1:2]): 
     # generate with stable diffusion
     output = sdcn.gen(condition, positive_prompt, negative_prompt)
 
