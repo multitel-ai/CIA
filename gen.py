@@ -1,103 +1,99 @@
+import argparse
 import cv2
+import hydra
+import glob
 import os
+from omegaconf import DictConfig, OmegaConf
+from typing import Dict, List
+
+from diffusers.utils import load_image
 import numpy as np
 from pathlib import Path
-from extractors import OpenPose
-from generators import SDCN
 from PIL import Image
-from diffusers.utils import load_image
-import glob
-import hydra
-from omegaconf import DictConfig
 
-SDCN_OPTIONS = {
-    'openpose': [
-        {
-            'sd': 'runwayml/stable-diffusion-v1-5',
-            'cn': 'lllyasviel/sd-controlnet-openpose',
-        },
-        {
-            'sd': 'runwayml/stable-diffusion-v1-5',
-            'cn': 'frankjoshua/control_v11p_sd15_openpose',
-        },
-        {
-            'sd': 'stabilityai/stable-diffusion-2-1',
-            'cn': 'thibaud/controlnet-sd21-openposev2-diffusers',
-        },
-        {
-            'sd': 'stabilityai/stable-diffusion-2-1',
-            'cn': 'thibaud/controlnet-sd21-openpose-diffusers',
-        },
-    ],
-    'canny': [
-        {
-            'sd': 'runwayml/stable-diffusion-v1-5',
-            'cn': 'lllyasviel/sd-controlnet-canny',
-        },
-    ],   
+from extractors import * 
+from generators import SDCN
+
+
+# Best clear way that I have to do this for the moment
+extractors_dict = {
+    'canny': Canny,
+    'openpose': OpenPose,
+    'fusing_openpose': OpenPose,
 }
 
-EXTRACTOR_TO_USE = 'openpose'
-MODEL_TO_USE = 1
+def find_model_name(name: str, l: List[Dict[str, str]]) -> str:
+    for small_dict in l:
+        if name in small_dict:
+            return small_dict[name]
+    return None
 
-@hydra.main(config_name='config')
-def main(cfg: DictConfig) -> None:
+@hydra.main(version_base=None, config_path="conf", config_name="config")
+def main(cfg : DictConfig) -> None:
     # BASE PATHS, please used these when specifying paths
-    BASE_PATH = Path(__file__).parent.resolve()
-    DATA_PATH = BASE_PATH / "bank" / "data"
+    data_path = cfg['data_path']
+    REAL_DATA_PATH = Path(data_path['real'])
+    # keep track of what feature was used for generation too in the name
+    GEN_DATA_PATH =  Path(data_path['base']) / (f"{data_path['generated']}_{cfg['model']['cn_use']}")
+
+    # Specify the results path
+    (GEN_DATA_PATH).mkdir(parents=True, exist_ok=True)
 
     # Loading COCO should be here somwhere
-    formats = cfg.formats
+    formats = cfg['image_formats'] 
     images = []
-    
     for format in formats:
         images += [ 
-            *glob.glob( str((DATA_PATH / "data" / "real").absolute()) + f'/*.{format}')
+            *glob.glob(str(REAL_DATA_PATH.absolute()) + f'/*.{format}')
         ]
-
     images = [load_image(image_path) for image_path in images]
 
     # We should explore what prompts are better ? Let's write a prompts generator
     # number of prompts in the list = 
     ## either number of images
     ## or in case of 1 original image, it's the number of generations
+    prompt = cfg['prompt']
+    if isinstance(prompt['base'], str):
+        positive_prompt = [prompt['base'] + ' ' + prompt['modifier'] + ' ' + prompt['quality']]
+        negative_prompt = [''.join(prompt['negative_simple'])]
+    else:
+        positive_prompt = [
+            pb + ' ' + prompt['modifier'] + ' ' + prompt['quality']
+            for pb in prompt['base']
+        ]
+        negative_prompt = [''.join(prompt['negative_simple'])] * len(positive_prompt)
 
-    positive_prompt = [prompt + cfg.positive_prompt for prompt in cfg.positive_prompt]
+    # Specify the model and feature extractor. Be aware that ideally both extractor and
+    # generator should be using the same feature.
+    model_data = cfg['model']
+    sd_model = model_data['sd']
     
-    negative_prompt = cfg.negative_prompt * len(positive_prompt)
-    # Specify the results path
-    #results_path = DATA_PATH / "data" / "openpose1"
+    cn_model = find_model_name(model_data['cn_use'], model_data['cn'])
+    cn_model = cn_model if cn_model is not None else 'fusing/stable-diffusion-v1-5-controlnet-openpose'
+    
+    seed = model_data['seed']
+    device = model_data['device']
 
-    openpose_dirs = sorted(glob.glob(str(DATA_PATH / "openpose*")))
-    latest_experiment = max(int(Path(dir).name[8:]) for dir in openpose_dirs)
-    new_experiment = latest_experiment + 1
-    results_path = DATA_PATH / cfg.model_name + new_experiment 
-    (results_path).mkdir(parents=True, exist_ok=True)
+    generator = SDCN(sd_model, cn_model, seed, device=device)
+    extractor = extractors_dict[
+        model_data['cn_use'] if model_data['cn_use'] in extractors_dict else 'canny'
+    ]()
 
+    # Generate from each image several synthetic images following the different prompts.
+    for i, image in enumerate(images):
+        # Copy the original image to the same directory to ease the quality testing after.
+        image.save(GEN_DATA_PATH / f'b_{i+1}.png')
 
-    sdcn = SDCN(
-        SDCN_OPTIONS[EXTRACTOR_TO_USE][MODEL_TO_USE]['sd'],
-        SDCN_OPTIONS[EXTRACTOR_TO_USE][MODEL_TO_USE]['cn'],
-        cfg.seed
-    )
-
-    extractions = []
-    for image in images:
-        # Feature Extraction
-        extractions += [OpenPose().detect(np.array(image))]
-        # extractions[-1].save(results_path / f"condition.png")
-
+         # Feature extraction, save also the features.
+        feature = extractor.extract(image)
+        feature.save(GEN_DATA_PATH / f"f_{i+1}.png")
         
-    i = 0
-    for i, condition in enumerate(extractions): 
-        # generate with stable diffusion
-        output = sdcn.gen(condition, positive_prompt, negative_prompt)
+        # Generate with stable diffusion
+        output = generator.gen(feature, positive_prompt, negative_prompt)
 
         # save images
-        for idx, img in enumerate(output.images):
-            image_name = Path(images[idx]).stem
-            img.save(results_path / f"{image_name}_{i%len(positive_prompt)}.png")
-            i += 1
+        for j, img in enumerate(output.images):
+            img.save(GEN_DATA_PATH / f'{i+1}_{j+1}.png')
 
-if __name__=="_main__":
+if __name__ == '__main__':
     main()
