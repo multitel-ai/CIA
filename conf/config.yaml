@@ -1,0 +1,38 @@
+data_path:
+  base: 'bank/data'
+  real: 'bank/data/real'
+  generated: 'test'
+image_formats: ['jpg', 'jpeg', 'png']
+prompt:
+  base: ["Sandra Oh body", "Kim Kardashian body", "rihanna ", "taylor swift"]
+  quality: ", best quality, extremely detailed,"
+  modifier: "wearing jeans and a shirt, smiling, with a realistic face, and hands clapping" 
+  negative: [
+    "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion, no umbrella,",
+    "distortion, bad quality, lowres, cropped,worst quality, bad focus, blurry, ad compression, bad artifact,",
+    "bad pixel, deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime:1.4),",
+    "close up, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated,",
+    "extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated,",
+    "bad anatomy, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs,",
+    "extra arms, extra legs, fused fingers, too many fingers, long neck, no cars, no people, illustration, painting,",
+    "drawing, art, sketch, cartoon, anime, deformation, distorsion"
+  ]
+  negative_simple: "monochrome, lowres, bad anatomy, worst quality, low quality"
+model:
+  sd: runwayml/stable-diffusion-v1-5
+  cn_use: fusing_openpose
+  cn:
+    - depth: lllyasviel/sd-controlnet-depth
+    - hed: lllyasviel/sd-controlnet-hed
+    - normal: lllyasviel/sd-controlnet-normal
+    - scribble: lllyasviel/sd-controlnet-scribble
+    - segmentation: lllyasviel/sd-controlnet-seg
+    - openpose: lllyasviel/sd-controlnet-openpose
+    - mlsd: lllyasviel/sd-controlnet-mlsd
+    - canny: lllyasviel/sd-controlnet-canny
+    - fusing_openpose: fusing/stable-diffusion-v1-5-controlnet-openpose
+  seed: 34567
+  device: cuda
+
+
+
