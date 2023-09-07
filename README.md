@@ -14,5 +14,19 @@ To generate some images for the moment you can use
 See the `conf/config.yaml` file for more details, you can configurate your run
 from the config file or direclty like
 ```bash
-./run.sh gen model.cn_use=segmentation prompt.base="Trump" prompt.modifier="dancing"
+./run.sh gen model.cn_use=openpose prompt.base="Trump" prompt.modifier="dancing" data_path.generated=mysupertest
 ```
+You will find your images in `bank/data/mysupertest_openpose` along with the base image and the feature extracted.
+
+<p float="left">
+    <img width="350" src="docs/images/b_1.png"/>
+    <img width="350" src="docs/images/f_1.png"/>
+</p>
+<p float="left">
+    <img width="350" src="docs/images/1_1.png"/>
+    <img width="350" src="docs/images/2_1.png"/>
+</p>
+<p float="left">
+    <img width="350" src="docs/images/3_1.png"/>
+    <img width="350" src="docs/images/4_1.png"/>
+</p>

@@ -17,6 +17,7 @@ prompt:
     "extra arms, extra legs, fused fingers, too many fingers, long neck, no cars, no people, illustration, painting,",
     "drawing, art, sketch, cartoon, anime, deformation, distorsion"
   ]
+  negative_simple: "monochrome, lowres, bad anatomy, worst quality, low quality"
 model:
   sd: runwayml/stable-diffusion-v1-5
   cn_use: fusing_openpose

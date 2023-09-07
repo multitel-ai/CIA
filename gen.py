@@ -33,7 +33,8 @@ def main(cfg : DictConfig) -> None:
     # BASE PATHS, please used these when specifying paths
     data_path = cfg['data_path']
     REAL_DATA_PATH = Path(data_path['real'])
-    GEN_DATA_PATH =  Path(data_path['base']) / data_path['generated']
+    # keep track of what feature was used for generation too in the name
+    GEN_DATA_PATH =  Path(data_path['base']) / (f"{data_path['generated']}_{cfg['model']['cn_use']}")
 
     # Specify the results path
     (GEN_DATA_PATH).mkdir(parents=True, exist_ok=True)
@@ -47,7 +48,6 @@ def main(cfg : DictConfig) -> None:
         ]
     images = [load_image(image_path) for image_path in images]
 
-
     # We should explore what prompts are better ? Let's write a prompts generator
     # number of prompts in the list = 
     ## either number of images
@@ -55,13 +55,13 @@ def main(cfg : DictConfig) -> None:
     prompt = cfg['prompt']
     if isinstance(prompt['base'], str):
         positive_prompt = [prompt['base'] + ' ' + prompt['modifier'] + ' ' + prompt['quality']]
-        negative_prompt = [''.join(prompt['negative'])]
+        negative_prompt = [''.join(prompt['negative_simple'])]
     else:
         positive_prompt = [
             pb + ' ' + prompt['modifier'] + ' ' + prompt['quality']
             for pb in prompt['base']
         ]
-        negative_prompt = [''.join(prompt['negative'])] * len(positive_prompt)
+        negative_prompt = [''.join(prompt['negative_simple'])] * len(positive_prompt)
 
     # Specify the model and feature extractor. Be aware that ideally both extractor and
     # generator should be using the same feature.
@@ -79,15 +79,14 @@ def main(cfg : DictConfig) -> None:
         model_data['cn_use'] if model_data['cn_use'] in extractors_dict else 'canny'
     ]()
 
-<<<<<<< HEAD
-
-=======
->>>>>>> d8a611e... [IMP] models can now be asked to generate from a common api
     # Generate from each image several synthetic images following the different prompts.
     for i, image in enumerate(images):
-         # Feature extraction.
+        # Copy the original image to the same directory to ease the quality testing after.
+        image.save(GEN_DATA_PATH / f'b_{i+1}.png')
+
+         # Feature extraction, save also the features.
         feature = extractor.extract(image)
-        feature.save(GEN_DATA_PATH / f"feature_{i+1}.png")
+        feature.save(GEN_DATA_PATH / f"f_{i+1}.png")
         
         # Generate with stable diffusion
         output = generator.gen(feature, positive_prompt, negative_prompt)

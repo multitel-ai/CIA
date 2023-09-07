@@ -21,8 +21,13 @@ class SDCN:
             safety_checker = None
         )
 
+        # The default config seems to work best for the moment, we would need to tweak a lot to know
+        # what to use.
+        self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
+
         # Docs of this scheduler: https://huggingface.co/docs/diffusers/main/en/api/schedulers/unipc
-        self.pipe.scheduler = UniPCMultistepScheduler(
+        # Example of scheduler with full parameters customization, does not seem to work fine...
+        self.pipe.scheduler2 = UniPCMultistepScheduler(
             num_train_timesteps=1000,
             beta_start=0.0001,
             beta_end=0.02,
