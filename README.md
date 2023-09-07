@@ -27,10 +27,10 @@ python prep_coco.py
 
 ## List of some tested SD models and Compatible ControlNet Models :
 
-- SD MODEL 
+- SD MODEL
     - CONTROL MODEL
 
-### Canny 
+### Canny
 
 - runwayml/stable-diffusion-v1-5 :
     - lllyasviel/sd-controlnet-canny
@@ -87,3 +87,23 @@ List of available models can be found in `conf/config.yaml`. We have 3 available
 - openpose
 - canny
 - mediapipe_face
+
+
+## Test the quality of images with IQA measures
+
+One way of testing the quality of the generated images is to use computational and statistical
+methods. One good library for it is [IQA-PyTroch](https://github.com/chaofengc/IQA-PyTorch), you
+can go read its [paper](https://arxiv.org/pdf/2208.14818.pdf).
+
+You can use these measures in the same way the generation is done:
+```bash
+./run iqa
+```
+It follows the same configuration that the generation part, with the same file `conf/config.yaml`.
+You can select from a variety of methods and even test several at the same time.
+
+**Note**: `iqa` is going to search for a directory following the same naming convention that `gen.py`,
+that is, the directory has the name `<name chosen by the user>_<cn model used to generate>`.
+This are of course in the `config.yaml` file and can be changed statically or dynamically.
+
+<img src="docs/images/iqa_measure.png" />

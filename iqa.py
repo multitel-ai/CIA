@@ -1,15 +1,16 @@
-import hydra
-from omegaconf import DictConfig, OmegaConf
-
-from typing import List, Optional
-import re
-import glob
+import matplotlib.pyplot as plt
 import os
 from pathlib import Path
+import re
+from typing import List, Optional, Tuple
+from tqdm import tqdm
+
+import hydra
+from omegaconf import DictConfig
+
 from pyiqa import create_metric
 from pyiqa.models.inference_model import InferenceModel
-from tqdm import tqdm
-from PIL import Image
+
 
 # In this file the approach to measure quality will be the extensive library
 # IQA-Pytorch: https://github.com/chaofengc/IQA-PyTorch
@@ -39,7 +40,7 @@ from PIL import Image
 #   is opinion-unaware and unsupervised, which means it does not require a
 #   trained model. PIQE can measure the quality of images with arbitrary
 #   distortion and in most cases performs similar to NIQE. PIQE estimates
-#   block-wise distortion and measures the local variance of perceptibly 
+#   block-wise distortion and measures the local variance of perceptibly
 #   distorted blocks to compute the quality score.
 # - biqi
 # - cornia
@@ -50,17 +51,21 @@ from PIL import Image
 # - qac
 
 
-def measure_several_images(metric: InferenceModel, image_paths: List[str], ref_image_paths: Optional[List[str]] = None):
+def measure_several_images(metric: InferenceModel,
+                           image_paths: List[str],
+                           ref_image_paths: Optional[List[str]] = None
+                           ) -> Tuple[float, float]:
     number_of_images = len(image_paths)
     scores = []
     avg_score = 0
 
     for i, image_path in enumerate(tqdm(image_paths, unit='image')):
-        ref_image_path = ref_image_paths and ref_image_paths[i] 
+        ref_image_path = ref_image_paths and ref_image_paths[i]
 
         score = metric(image_path, ref_image_path)
-        score = score.item()
-        
+        score = score.item()  # This should be adapted if using cpu as device,
+                              # here because of cuda we get a 1-dim tensor
+
         scores.append(score)
         avg_score += score
 
@@ -68,41 +73,59 @@ def measure_several_images(metric: InferenceModel, image_paths: List[str], ref_i
     return scores, avg_score
 
 
-def is_generated_image(image_path) -> bool:
+def is_generated_image(image_path: str) -> bool:
     # You should change the regex in this function to match whatever
     # naming convention you follow for you experience.
     regex = '^[0-9]+_[0-9]+.(jpg|png)'
-    
+
     image_wo_path = os.path.basename(image_path)
     return re.match(regex, image_wo_path)
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg : DictConfig) -> None:
+    # BASE PATHS, please used these when specifying paths
+    data_path = cfg['data_path']
+    # keep track of what feature was used for generation too in the name
+    GEN_DATA_PATH =  Path(data_path['base']) / (f"{data_path['generated']}_{cfg['model']['cn_use']}")
+
+    image_paths = [
+        str(GEN_DATA_PATH / image_path)
+        for image_path in os.listdir(str(GEN_DATA_PATH)) if is_generated_image(image_path)
+    ]
+    image_paths.sort()
+    image_names = [os.path.basename(image_path)[:4] for image_path in image_paths]
 
    # We are hard-coding the No-Reference methods for the moment.
    # See reasonment above.
     METRIC_MODE = 'NR'
 
     all_iqa_metrics = cfg['iqa']['metrics']
-    metric = cfg['iqa']['current'].lower()
-    metric = metric if metric in all_iqa_metrics else 'brisque'
-
+    metrics = [metric.lower() for metric in cfg['iqa']['current'] if metric.lower() in all_iqa_metrics]
+    if not metrics:
+        metrics = ['brisque']
     device = cfg['model']['device']
 
-    iqa_model = create_metric(metric, device=device, metric_mode=METRIC_MODE)
+    overall_scores = {}
+    for metric_name in tqdm(metrics):
+        print('=' * 40)
+        print(f'Measure using {metric_name} metric.')
+        iqa_model = create_metric(metric_name, device=device, metric_mode=METRIC_MODE)
+        scores, avg_score = measure_several_images(iqa_model, image_paths)
+        overall_scores[metric_name] = scores, avg_score
+    print('=' * 40)
 
-    # BASE PATHS, please used these when specifying paths
-    data_path = cfg['data_path']
-    REAL_DATA_PATH = Path(data_path['real'])
-    # keep track of what feature was used for generation too in the name
-    GEN_DATA_PATH =  Path(data_path['base']) / (f"{data_path['generated']}_{cfg['model']['cn_use']}")
+    global_avg_score = 0
+    for metric_name in overall_scores:
+        scores, avg_score = overall_scores[metric_name]
+        global_avg_score += avg_score
+        plt.plot(image_names, scores, label = f'Avg score of {metric_name}: {avg_score}')
+    global_avg_score = global_avg_score / len(metrics)
 
-    image_paths = [str(GEN_DATA_PATH / image_path) for image_path in os.listdir(str(GEN_DATA_PATH)) if is_generated_image(image_path)]
+    plt.title(f'Dataset: {os.path.basename(str(GEN_DATA_PATH))}\nGlobal avg score: {global_avg_score}', loc='left')
+    plt.legend()
+    plt.show()
 
-    scores, avg_scores = measure_several_images(iqa_model, image_paths)
-
-    print(scores, avg_scores)
 
 if __name__ == '__main__':
     main()

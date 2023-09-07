@@ -61,5 +61,9 @@ iqa:
     'musiq-paq2piq', 'musiq-spaq', 'nima', 'nima-vgg16-ava', 'niqe', 'nlpd', 'nrqm', 'paq2piq', 'pi', 'pieapp',
     'psnr', 'psnry', 'ssim', 'ssimc', 'tres', 'tres-flive', 'tres-koniq', 'uranker', 'vif', 'vsi'
   ]
+<<<<<<< HEAD
   current: 'brisque'
 >>>>>>> [ADD] adding quality measures
+=======
+  current: ['brisque', 'niqe', 'ilniqe', 'entropy']
+>>>>>>> [IMP] iqa framework can now be pipelined
