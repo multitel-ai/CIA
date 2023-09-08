@@ -9,4 +9,7 @@ pillow
 accelerate
 matplotlib
 hydra-core
+mediapipe
+pyiqa
 pycocotools
+gdown
