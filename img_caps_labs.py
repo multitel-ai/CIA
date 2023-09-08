@@ -1,15 +1,62 @@
 import json
 import os
 import shutil
+import gdown
+from pycocotools.coco import COCO
+import numpy as np
+import skimage.io as io
+import glob
+import hydra
 
-img_path = os.path.join(dataDir, 'images')
-os.makedirs(img_path, exist_ok=True)
 
-labs_path = os.path.join(dataDir, 'f_labels')
-os.makedirs(labs_path, exist_ok=True)
+dataDir='/content/home/ahmadh/'
+dataType='train2017'
 
-caps_path = os.path.join(dataDir, 'f_captions')
-os.makedirs(caps_path, exist_ok=True)
+x = glob.glob('{}/Coco_1FullPerson/*.jpg'.format(dataDir))
+
+Coco_1FullPerson =[]
+for file in x:
+  Coco_1FullPerson += [int(file.split('/')[-1].split('.')[0])]
+
+#load annotations
+annFile='{}annotations/instances_{}.json'.format(dataDir,dataType)
+coco=COCO(annFile)
+
+annFile_kps = '{}/annotations/person_keypoints_{}.json'.format(dataDir,dataType)
+coco_kps = COCO(annFile_kps)
+
+annFile_caps = '{}/annotations/captions_{}.json'.format(dataDir,dataType)
+coco_caps=COCO(annFile_caps)
+
+catIds = coco.getCatIds(catNms=['person'])
+
+import matplotlib.pyplot as plt
+
+def get_annotation(img_id, caption = True, show= False):
+  img_path = '{}Coco_1FullPerson/{}.jpg'.format(dataDir,str(img_id).zfill(12))
+
+  # load caption annotations
+  Keypoints_annIds = coco_kps.getAnnIds(imgIds=img_id, catIds=catIds, iscrowd=None)
+  Keypoints_anns = coco_kps.loadAnns(Keypoints_annIds)
+
+  if caption:
+    # load caption annotations
+    caps_annIds = coco_caps.getAnnIds(imgIds=img_id);
+    caps_anns = coco_caps.loadAnns(caps_annIds)
+
+  if show:
+    # load and display keypoints annotations
+    I = io.imread(img_path)
+    # display keypoints annotations
+    plt.imshow(I); plt.axis('off')
+    ax = plt.gca()
+    coco_kps.showAnns(Keypoints_anns)
+    if caption:
+      # display caption annotations
+      coco_caps.showAnns(caps_anns)
+
+  if caption: return (Keypoints_anns, caps_anns)
+  else: return (Keypoints_anns)
 
 def save_data(img_id):
     
@@ -30,3 +77,16 @@ def save_data(img_id):
     all_captions = [cap['caption'] for cap in caps_anns]
     with open(os.path.join(dataDir, "captions", "{}.json".format(str(img_id).zfill(12))), 'w') as file:
         json.dump(all_captions, file)
+    
+
+
+@hydra.main(version_base=None, config_path="conf", config_name="config")
+def main():
+
+    folders = ["images", "captions", "labels"]
+    for folder in folders:
+        path = os.path.join(dataDir, folder)
+        os.makedirs(path, exist_ok=True)
+
+if __name__ == "__main__":
+   main()
