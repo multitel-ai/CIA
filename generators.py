@@ -86,6 +86,12 @@ class prompt:
                            'clothes':['shirt','pant','hoody'], 'accessories':['hat','glasses','shoes','watch']}
     
     def max_num_prompts(self, phrase: str) -> int:
+        '''
+        # Calculates the maximum number of prompts that can be generated for the given phrase
+        Args: phrase; str; The basic prompt that needs to be changed based on options in vocabulary
+        
+        Returns: num_prompts; int; The maximum number of prompts that can be generated for the given phrase
+        '''
 
         num_prompts = 1
         phrase_list = phrase.lower().split()
@@ -98,6 +104,13 @@ class prompt:
         return(num_prompts)
 
     def prompts(self, num_prompts: int, phrase: str) -> list:
+        '''
+        # Generates unique prompts in the format of the given phrase
+        Args: num_prompts; int; Number of NEW prompts that are required to be generated (num_prompts given by max_num_prompts is used if this value is greater than maximum number of possible new prompts)
+              phrase; str; The basic prompt that needs to be changed based on options in vocabulary
+
+        Returns: phrase_list; list; A list of unique prompts in the format of given phrase
+        '''
 
         phrase_list = []
         phrase_list.extend([phrase.lower()])
