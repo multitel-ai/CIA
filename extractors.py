@@ -9,7 +9,7 @@ from controlnet_aux import OpenposeDetector
 # All extractors have the same api: extract(img: Image) -> Image
 
 class Canny:
-    def __init__(self, auto_threshold: bool = False, low_threshold: int = 100, high_threshold: int = 200) -> None:
+    def __init__(self, auto_threshold: bool = False, low_threshold: int = 100, high_threshold: int = 200, **kwargs):
         self.auto_threshold = auto_threshold
         self.low_threshold = low_threshold
         self.high_threshold = high_threshold
@@ -49,10 +49,20 @@ class Canny:
 
 
 class OpenPose:
-    def __init__(self, model: str = "lllyasviel/ControlNet"):
+    def __init__(self, model: str = "lllyasviel/ControlNet", **kwargs):
         self.model = OpenposeDetector.from_pretrained(model)
 
     def extract(self, image: Image) -> Image:
         image = np.array(image)
         pose = self.model(image)
         return pose
+
+
+class Extractor:
+    def __new__(cls, control_model: str, **kwargs):
+        if 'openpose' in control_model:
+            return OpenPose(**kwargs)
+        elif 'canny' in control_model:
+            return Canny(**kwargs)
+        else:
+            return Canny(**kwargs)

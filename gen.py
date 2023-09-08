@@ -13,28 +13,18 @@ from PIL import Image
 
 from extractors import * 
 from generators import SDCN
+from common import find_model_name
 
-
-# Best clear way that I have to do this for the moment
-extractors_dict = {
-    'canny': Canny,
-    'openpose': OpenPose,
-    'fusing_openpose': OpenPose,
-}
-
-def find_model_name(name: str, l: List[Dict[str, str]]) -> str:
-    for small_dict in l:
-        if name in small_dict:
-            return small_dict[name]
-    return None
+import torch 
+torch.backends.cudnn.benchmark=False
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg : DictConfig) -> None:
     # BASE PATHS, please used these when specifying paths
     data_path = cfg['data_path']
-    REAL_DATA_PATH = Path(data_path['real'])
+    REAL_DATA_PATH = Path(data_path['base']) / data_path['real']
     # keep track of what feature was used for generation too in the name
-    GEN_DATA_PATH =  Path(data_path['base']) / (f"{data_path['generated']}_{cfg['model']['cn_use']}")
+    GEN_DATA_PATH =  Path(data_path['base']) / data_path['generated'] / cfg['model']['cn_use']
 
     # Specify the results path
     (GEN_DATA_PATH).mkdir(parents=True, exist_ok=True)
@@ -75,9 +65,7 @@ def main(cfg : DictConfig) -> None:
     device = model_data['device']
 
     generator = SDCN(sd_model, cn_model, seed, device=device)
-    extractor = extractors_dict[
-        model_data['cn_use'] if model_data['cn_use'] in extractors_dict else 'canny'
-    ]()
+    extractor = Extractor(model_data['cn_use'])
 
     # Generate from each image several synthetic images following the different prompts.
     for i, image in enumerate(images):

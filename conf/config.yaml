@@ -1,23 +1,23 @@
 data_path:
   base: 'bank/data'
-  real: 'bank/data/real'
-  generated: 'test'
-image_formats: ['jpg', 'jpeg', 'png']
+  real: 'real'
+  generated: 'generated'
+image_formats: ['jpeg']
 prompt:
   base: ["Sandra Oh body", "Kim Kardashian body", "rihanna ", "taylor swift"]
   quality: ", best quality, extremely detailed,"
-  modifier: "wearing jeans and a shirt, smiling, with a realistic face, and hands clapping" 
+  modifier: "wearing jeans and a shirt, smiling, with a realistic face" 
   negative: [
-    "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion, no umbrella,",
-    "distortion, bad quality, lowres, cropped,worst quality, bad focus, blurry, ad compression, bad artifact,",
-    "bad pixel, deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime:1.4),",
-    "close up, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated,",
+    "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion,",
+    "distortion, bad quality, lowres, cropped, bad focus, blurry, ad compression, bad artifact,",
+    "bad pixel, deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, drawing, anime:1.4),",
+    "close up, cropped, out of frame, jpeg artifacts, ugly, duplicate, morbid, mutilated,",
     "extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated,",
-    "bad anatomy, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs,",
+    "extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs,",
     "extra arms, extra legs, fused fingers, too many fingers, long neck, no cars, no people, illustration, painting,",
-    "drawing, art, sketch, cartoon, anime, deformation, distorsion"
+    "drawing, art, sketch, anime, deformation, distorsion"
   ]
-  negative_simple: "monochrome, lowres, bad anatomy, worst quality, low quality"
+  negative_simple: "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion, disfigured, mutation, deformed mouth, deformed eyes"
 model:
   sd: runwayml/stable-diffusion-v1-5
   cn_use: fusing_openpose
