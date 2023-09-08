@@ -1,5 +1,6 @@
 import numpy as np
 from typing import List
+import random
 
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
 import torch
@@ -88,3 +89,40 @@ class SDCN:
         )
 
         return output
+
+class Prompt:
+    def __init__(self) -> None:
+
+        self.vocabulary = {'gender':['man','women','boy','girl'], 'age':['infant','toddler','child','young','middle aged','old'],
+                           'color':['red','green','blue','white','cyan','magenta','yellow','black'], 'size':['big','small'], 'height':['short','height'],
+                           'clothes':['shirt','pant','hoody'], 'accessories':['hat','glasses','shoes','watch']}
+
+    def max_num_prompts(self, phrase: str) -> int:
+
+        num_prompts = 1
+        phrase_list = phrase.lower().split()
+        for phrase_loc in range(len(phrase_list)):
+            for vocabulary_class in self.vocabulary.keys():
+                if phrase_list[phrase_loc] in self.vocabulary[vocabulary_class]:
+                    num_prompts = num_prompts * len(self.vocabulary[vocabulary_class])
+                    break
+
+        return(num_prompts)
+
+    def prompts(self, num_prompts: int, phrase: str) -> list:
+
+        phrase_list = []
+        phrase_list.extend([phrase.lower()])
+        num_prompts = min(num_prompts, self.max_num_prompts(phrase)-1)
+        while(len(phrase_list) <= num_prompts):
+            new_phrase_list = phrase_list[0].lower().split()
+            for phrase_loc in range(len(new_phrase_list)):
+                for vocabulary_class in self.vocabulary.keys():
+                    if new_phrase_list[phrase_loc] in self.vocabulary[vocabulary_class]:
+                        new_phrase_list[phrase_loc] = random.choice(self.vocabulary[vocabulary_class])
+                        break
+            new_phrase = ' '.join(new_phrase_list)
+            if new_phrase not in phrase_list:
+                phrase_list.extend([new_phrase])
+
+        return phrase_list[1:]
