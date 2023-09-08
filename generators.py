@@ -18,7 +18,7 @@ class SDCN:
             sd_model, 
             controlnet = self.controlnet, 
             torch_dtype = torch.float16,
-            safety_checker = None
+            safety_checker = None,
         )
 
         # The default config seems to work best for the moment, we would need to tweak a lot to know
@@ -61,7 +61,9 @@ class SDCN:
     def gen(self,
             condition: np.array | List[np.array],
             positive_prompts: List[str],
-            negative_prompts: List[str]
+            negative_prompts: List[str],
+            quality: str = 30,
+            guidance_scale: float = 7.0,
         ):
         generator = [
             torch.Generator(device=self.device).manual_seed(self.seed) for i in range(len(positive_prompts))
@@ -72,7 +74,8 @@ class SDCN:
             condition,
             negative_prompt = negative_prompts,
             generator = generator,
-            num_inference_steps = 20,
+            num_inference_steps = quality,
+            guidance_scale = guidance_scale,
         )
 
         return output
