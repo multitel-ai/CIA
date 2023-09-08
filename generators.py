@@ -141,12 +141,23 @@ class prompt:
         Returns: counter; int; maximum number of prompts that can be generated from prompt_templates
         '''
 
-        counter = 1
-        for phrase in self.prompt_templates:
-            phrase_list = re.split('_| ',phrase)
-            counter = counter * phrase_list.count('opt')
-
-        return(counter)
+        counter = 0
+        for phrase in self.phrase_templates:
+            phrase_counter = 1
+            phrase_list = phrase.split()
+            for phrase_word in phrase_list:
+                for vocabulary_class in self.vocabulary.keys():
+                    vocab_counter = 0
+                    if 'color' in phrase_word:
+                        vocab_counter = len(self.vocabulary['color'])
+                    elif 'opt' in phrase_word:
+                        vocab_counter = len(self.vocabulary[phrase_word[4:]])
+                    if vocab_counter>0:
+                        phrase_counter = phrase_counter*vocab_counter
+                        break
+            counter = counter + phrase_counter
+        
+        return counter
     
     def template_prompts(self, num_prompts: int) -> list:
         '''
