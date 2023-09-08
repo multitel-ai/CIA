@@ -97,16 +97,12 @@ class Prompt:
         self.vocabulary = {'gender':['man','women','boy','girl'], 'age':['infant','toddler','child','young','middle aged','old'],
                            'color':['red','green','blue','white','cyan','magenta','yellow','black'], 'size':['big','small'], 'height':['short','height'],
                            'clothes':['shirt','pant','hoody'], 'accessories':['hat','glasses','shoes','watch']}
-<<<<<<< HEAD
-
-=======
 
         self.prompt_templates = ['a opt_gender in a opt_color1 opt_clothes_top wearing opt_color2 opt_accessories',
                                 'a opt_gender in a opt_color1 opt_clothes_bottom with opt_background in the background',
                                 'a opt_gender standing on opt_ground with opt_background in the background',
                                 'a opt_gender in a opt_color1 opt_clothes_top and opt_color2 opt_clothes_bottom wearing a opt_color3 opt_accessories with opt_background in the background']
 
->>>>>>> added function to generate prompts from templates
     def max_num_prompts(self, phrase: str) -> int:
         '''
         # Calculates the maximum number of prompts that can be generated for the given phrase
@@ -157,12 +153,23 @@ class Prompt:
         Returns: counter; int; maximum number of prompts that can be generated from prompt_templates
         '''
 
-        counter = 1
-        for phrase in self.prompt_templates:
-            phrase_list = re.split('_| ',phrase)
-            counter = counter * phrase_list.count('opt')
+        counter = 0
+        for phrase in self.phrase_templates:
+            phrase_counter = 1
+            phrase_list = phrase.split()
+            for phrase_word in phrase_list:
+                for vocabulary_class in self.vocabulary.keys():
+                    vocab_counter = 0
+                    if 'color' in phrase_word:
+                        vocab_counter = len(self.vocabulary['color'])
+                    elif 'opt' in phrase_word:
+                        vocab_counter = len(self.vocabulary[phrase_word[4:]])
+                    if vocab_counter>0:
+                        phrase_counter = phrase_counter*vocab_counter
+                        break
+            counter = counter + phrase_counter
 
-        return(counter)
+        return counter
 
     def template_prompts(self, num_prompts: int) -> list:
         '''
