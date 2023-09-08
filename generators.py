@@ -101,7 +101,7 @@ class Prompt:
         '''
         # Calculates the maximum number of prompts that can be generated for the given phrase
         Args: phrase; str; The basic prompt that needs to be changed based on options in vocabulary
-        
+
         Returns: num_prompts; int; The maximum number of prompts that can be generated for the given phrase
         '''
 
@@ -118,7 +118,7 @@ class Prompt:
     def prompts(self, num_prompts: int, phrase: str) -> list:
         '''
         # Generates unique prompts in the format of the given phrase
-        Args: num_prompts; int; Number of NEW prompts that are required to be generated (num_prompts given by max_num_prompts is used if this value is greater than maximum number of possible new prompts)
+        Args: num_prompts; int; Number of prompts that are required including 'phrase' (num_prompts given by max_num_prompts is used if this value is greater than maximum number of possible prompts)
               phrase; str; The basic prompt that needs to be changed based on options in vocabulary
 
         Returns: phrase_list; list; A list of unique prompts in the format of given phrase
@@ -126,8 +126,8 @@ class Prompt:
 
         phrase_list = []
         phrase_list.extend([phrase.lower()])
-        num_prompts = min(num_prompts, self.max_num_prompts(phrase)-1)
-        while(len(phrase_list) <= num_prompts):
+        num_prompts = min(num_prompts, self.max_num_prompts(phrase))
+        while(len(phrase_list) < num_prompts):
             new_phrase_list = phrase_list[0].lower().split()
             for phrase_loc in range(len(new_phrase_list)):
                 for vocabulary_class in self.vocabulary.keys():
@@ -138,4 +138,4 @@ class Prompt:
             if new_phrase not in phrase_list:
                 phrase_list.extend([new_phrase])
 
-        return phrase_list[1:]
+        return phrase_list
