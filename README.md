@@ -72,3 +72,18 @@ You will find your images in `bank/data/mysupertest_openpose` along with the bas
     <img width="350" src="docs/images/3_1.png"/>
     <img width="350" src="docs/images/4_1.png"/>
 </p>
+
+
+## Multi run
+
+Here's an example of a multi-run with 3 different generators :
+
+```
+python gen.py -m model.cn_use=frankjoshua_openpose,fusing_openpose,lllyasviel_openpose
+```
+
+List of available models can be found in `conf/config.yaml`. We have 3 available extractors at the moment (OpenPose, Canny, MediaPipeFace), If you add another control net model, make sure you add one of the following strings to its name to set the extractor to use :
+
+- openpose
+- canny
+- mediapipe_face
