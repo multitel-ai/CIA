@@ -4,6 +4,27 @@ This is a data generation framework that uses stable diffusion with ControlNet. 
 
 <img src="docs/images/general_pipeline.png" />
 
+Make sure to install the requirements :
+
+```
+pip install -r requirements
+```
+
+We recommend using a virtual environment ;)
+
+## Datasets
+
+We experimented with PEOPLE from the COCO datasets :
+
+```
+# Download COCO Person
+chmod +x download_coco.sh
+./download_coco.sh
+
+# Extract images, captions, and bbox labels
+python prep_coco.py
+```
+
 ## List of some tested SD models and Compatible ControlNet Models :
 
 - SD MODEL 
