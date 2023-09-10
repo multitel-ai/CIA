@@ -13,7 +13,7 @@ from PIL import Image
 
 from extractors import * 
 from generators import SDCN
-from common import find_model_name
+from common import *
 
 import torch 
 torch.backends.cudnn.benchmark=False
@@ -29,7 +29,7 @@ def main(cfg : DictConfig) -> None:
     # Specify the results path
     (GEN_DATA_PATH).mkdir(parents=True, exist_ok=True)
 
-    # Loading COCO should be here somwhere
+    # Loading COCO should be here somewhere
     formats = cfg['image_formats'] 
     images = []
     for format in formats:
@@ -64,24 +64,38 @@ def main(cfg : DictConfig) -> None:
     seed = model_data['seed']
     device = model_data['device']
 
-    generator = SDCN(sd_model, cn_model, seed, device=device)
+    if model_data['cn_use'] in model_data['cn_extra_settings']:
+        cn_extra_settings = model_data['cn_extra_settings'][model_data['cn_use']]
+    else:
+        cn_extra_settings = {}
+
+    generator = SDCN(
+        sd_model, 
+        cn_model, 
+        seed, 
+        device = device, 
+        cn_extra_settings = cn_extra_settings
+    )
     extractor = Extractor(model_data['cn_use'])
 
     # Generate from each image several synthetic images following the different prompts.
     for i, image in enumerate(images):
-        # Copy the original image to the same directory to ease the quality testing after.
-        image.save(GEN_DATA_PATH / f'b_{i+1}.png')
+        try:
+            # Copy the original image to the same directory to ease the quality testing after.
+            image.save(GEN_DATA_PATH / f'b_{i+1}.png')
 
-         # Feature extraction, save also the features.
-        feature = extractor.extract(image)
-        feature.save(GEN_DATA_PATH / f"f_{i+1}.png")
-        
-        # Generate with stable diffusion
-        output = generator.gen(feature, positive_prompt, negative_prompt)
+            # Feature extraction, save also the features.
+            feature = extractor.extract(image)
+            feature.save(GEN_DATA_PATH / f"f_{i+1}.png")
+            
+            # Generate with stable diffusion
+            output = generator.gen(feature, positive_prompt, negative_prompt)
 
-        # save images
-        for j, img in enumerate(output.images):
-            img.save(GEN_DATA_PATH / f'{i+1}_{j+1}.png')
+            # save images
+            for j, img in enumerate(output.images):
+                img.save(GEN_DATA_PATH / f'{i+1}_{j+1}.png')
+        except Exception as e:
+            print('Image {i}: Exception during Extraction/SDCN', e)
 
 if __name__ == '__main__':
     main()
