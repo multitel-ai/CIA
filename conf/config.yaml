@@ -2,6 +2,7 @@ data_path:
   base: 'bank/data'
   real: 'real'
   generated: 'generated'
+  datasets: 'datasets'
 image_formats: ['jpeg', 'jpg']
 prompt:
   base: ["Sandra Oh", "Kim Kardashian", "rihanna ", "taylor swift"]

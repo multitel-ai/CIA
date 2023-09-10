@@ -4,6 +4,49 @@ This is a data generation framework that uses stable diffusion with ControlNet. 
 
 <img src="docs/images/general_pipeline.png" />
 
+Make sure to install the requirements :
+
+```
+pip install -r requirements
+```
+
+We recommend using a virtual environment ;)
+
+## Datasets
+
+We experimented with PEOPLE from the COCO datasets :
+
+```
+# Download COCO Person
+chmod +x download_coco.sh
+./download_coco.sh
+
+# Extract images, captions, and bbox labels
+python prep_coco.py
+```
+
+## List of some tested SD models and Compatible ControlNet Models :
+
+- SD MODEL 
+    - CONTROL MODEL
+
+### Canny 
+
+- runwayml/stable-diffusion-v1-5 :
+    - lllyasviel/sd-controlnet-canny
+
+
+### OpenPose
+
+- runwayml/stable-diffusion-v1-5
+    - lllyasviel/sd-controlnet-openpose
+    - frankjoshua/control_v11p_sd15_openpose
+
+- stabilityai/stable-diffusion-2-1
+    - thibaud/controlnet-sd21-openposev2-diffusers
+    - thibaud/controlnet-sd21-openpose-diffusers
+
+
 ## Generate test images
 
 To generate some images for the moment you can use

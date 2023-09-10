@@ -167,5 +167,6 @@ cython_debug/
 #.idea/
 
 bank*
+datasets*
 multirun*
-.vscode
+.vscode*
