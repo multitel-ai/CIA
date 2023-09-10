@@ -2,11 +2,11 @@ data_path:
   base: 'bank/data'
   real: 'real'
   generated: 'generated'
-image_formats: ['jpeg']
+image_formats: ['jpeg', 'jpg']
 prompt:
-  base: ["Sandra Oh body", "Kim Kardashian body", "rihanna ", "taylor swift"]
-  quality: ", best quality, extremely detailed,"
-  modifier: "wearing jeans and a shirt, smiling, with a realistic face" 
+  base: ["Sandra Oh", "Kim Kardashian", "rihanna ", "taylor swift"]
+  quality: "showing emotion, great realistic face, best quality, extremely detailed,"
+  modifier: "Happy man smiling" 
   negative: [
     "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion,",
     "distortion, bad quality, lowres, cropped, bad focus, blurry, ad compression, bad artifact,",
@@ -17,22 +17,34 @@ prompt:
     "extra arms, extra legs, fused fingers, too many fingers, long neck, no cars, no people, illustration, painting,",
     "drawing, art, sketch, anime, deformation, distorsion"
   ]
-  negative_simple: "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion, disfigured, mutation, deformed mouth, deformed eyes"
+  negative_simple: "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion, disfigured, mutation, deformed mouth, deformed eyes, unnatural teeth, unnatural eyes, unnatural mouth, unnatural face, unnatural face expression, not human"
 model:
   sd: runwayml/stable-diffusion-v1-5
-  cn_use: fusing_openpose
+  cn_use: lllyasviel_canny
   cn:
-    - depth: lllyasviel/sd-controlnet-depth
-    - hed: lllyasviel/sd-controlnet-hed
-    - normal: lllyasviel/sd-controlnet-normal
-    - scribble: lllyasviel/sd-controlnet-scribble
-    - segmentation: lllyasviel/sd-controlnet-seg
-    - openpose: lllyasviel/sd-controlnet-openpose
-    - mlsd: lllyasviel/sd-controlnet-mlsd
-    - canny: lllyasviel/sd-controlnet-canny
+    # Canny
+    - lllyasviel_canny: lllyasviel/sd-controlnet-canny
+    - lllyasviel_scribble_canny: lllyasviel/sd-controlnet-scribble
+    
+    # OpenPose
+    - lllyasviel_openpose: lllyasviel/sd-controlnet-openpose
     - fusing_openpose: fusing/stable-diffusion-v1-5-controlnet-openpose
+    - frankjoshua_openpose: frankjoshua/control_v11p_sd15_openpose
+
+    # MediaPipeFace
+    - crucible_mediapipe_face: CrucibleAI/ControlNetMediaPipeFace
+
+    # Coming Soon !
+    # - depth: lllyasviel/sd-controlnet-depth
+    # - hed: lllyasviel/sd-controlnet-hed
+    # - normal: lllyasviel/sd-controlnet-normal
+    # - scribble: lllyasviel/sd-controlnet-scribble
+    # - segmentation: lllyasviel/sd-controlnet-seg
+    # - mlsd: lllyasviel/sd-controlnet-mlsd
+    
+  cn_extra_settings:
+    crucible_mediapipe_face:
+      subfolder: diffusion_sd15
   seed: 34567
   device: cuda
-
-
 
