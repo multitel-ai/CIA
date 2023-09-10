@@ -9,3 +9,4 @@ accelerate
 matplotlib 
 hydra-core
 mediapipe
+pycocotools
