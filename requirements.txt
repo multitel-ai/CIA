@@ -1,4 +1,5 @@
-diffusers==0.14.0 
+diffusers==0.14.0
+mediapipe==0.10.0
 transformers
 xformers
 opencv-contrib-python
@@ -8,4 +9,3 @@ pillow
 accelerate
 matplotlib 
 hydra-core
-mediapipe

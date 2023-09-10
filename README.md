@@ -4,28 +4,6 @@ This is a data generation framework that uses stable diffusion with ControlNet. 
 
 <img src="docs/images/general_pipeline.png" />
 
-## List of some tested SD models and Compatible ControlNet Models :
-
-- SD MODEL 
-    - CONTROL MODEL
-
-### Canny 
-
-- runwayml/stable-diffusion-v1-5 :
-    - lllyasviel/sd-controlnet-canny
-
-
-### OpenPose
-
-- runwayml/stable-diffusion-v1-5
-    - lllyasviel/sd-controlnet-openpose
-    - frankjoshua/control_v11p_sd15_openpose
-
-- stabilityai/stable-diffusion-2-1
-    - thibaud/controlnet-sd21-openposev2-diffusers
-    - thibaud/controlnet-sd21-openpose-diffusers
-
-
 ## Generate test images
 
 To generate some images for the moment you can use
@@ -51,3 +29,18 @@ You will find your images in `bank/data/mysupertest_openpose` along with the bas
     <img width="350" src="docs/images/3_1.png"/>
     <img width="350" src="docs/images/4_1.png"/>
 </p>
+
+
+## Multi run
+
+Here's an example of a multi-run with 3 different generators :
+
+```
+python gen.py -m model.cn_use=frankjoshua_openpose,fusing_openpose,lllyasviel_openpose
+```
+
+List of available models can be found in `conf/config.yaml`. We have 3 available extractors at the moment (OpenPose, Canny, MediaPipeFace), If you add another control net model, make sure you add one of the following strings to its name to set the extractor to use :
+
+- openpose
+- canny
+- mediapipe_face

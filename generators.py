@@ -6,13 +6,17 @@ import torch
 
 
 class SDCN:
-    def __init__(self, sd_model: str, control_model: str, seed: int, device='cpu'):
+    def __init__(self, sd_model: str, control_model: str, seed: int, device='cpu',  cn_extra_settings = {}):
+        
+        print(f'Initializing SDCN with {sd_model} and {control_model}, seed = {seed}')
+
         self.seed = seed
         self.device = device
 
         self.controlnet = ControlNetModel.from_pretrained(
             control_model, 
-            torch_dtype = torch.float16
+            torch_dtype = torch.float16,
+            **cn_extra_settings
         )
         self.pipe = StableDiffusionControlNetPipeline.from_pretrained(
             sd_model, 
@@ -50,12 +54,12 @@ class SDCN:
         )
 
         # Move the whole pipe to the designed device to avoid malformed cuda/cpu instructions
-        self.pipe.to(device)
+        # self.pipe.to(device)
 
         # The line below is explained in https://huggingface.co/blog/controlnet but sometimes
         # it will throw an error later in the pipeline about having or not instructions for half
         # floats if you try to use 'cuda'.
-        # self.pipe.enable_model_cpu_offload()
+        self.pipe.enable_model_cpu_offload()
         self.pipe.enable_xformers_memory_efficient_attention()
 
     def gen(self,
@@ -79,4 +83,3 @@ class SDCN:
         )
 
         return output
-    
