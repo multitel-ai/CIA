@@ -4,6 +4,12 @@ from PIL import Image
 
 from controlnet_aux import OpenposeDetector
 
+# Mediapipe
+import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+
+from common import draw_landmarks_on_image
 
 # !!!
 # All extractors have the same api: extract(img: Image) -> Image
@@ -49,7 +55,7 @@ class Canny:
 
 
 class OpenPose:
-    def __init__(self, model: str = "lllyasviel/ControlNet", **kwargs):
+    def __init__(self, model: str = 'lllyasviel/ControlNet', **kwargs):
         self.model = OpenposeDetector.from_pretrained(model)
 
     def extract(self, image: Image) -> Image:
@@ -58,11 +64,32 @@ class OpenPose:
         return pose
 
 
+class MediaPipeFace:
+    def __init__(self, model: str = 'ressources/mediapipe/face_landmarker_v2_with_blendshapes.task', **kwargs):
+        self.base_options = python.BaseOptions(model_asset_path = model)
+        self.options = vision.FaceLandmarkerOptions(base_options = self.base_options,
+                                            output_face_blendshapes = True,
+                                            output_facial_transformation_matrixes = True,
+                                            num_faces = 1)
+        self.detector = vision.FaceLandmarker.create_from_options(self.options)
+
+    def extract(self, image: Image) -> Image:
+        image = np.array(image)
+        image_mp = mp.Image(image_format = mp.ImageFormat.SRGB, data = image)
+        detection_result = self.detector.detect(image_mp)
+        annotated_image = draw_landmarks_on_image(image, detection_result)
+        annotated_image = cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR)
+        annotated_image = Image.fromarray(annotated_image)
+        return annotated_image
+
+
 class Extractor:
     def __new__(cls, control_model: str, **kwargs):
         if 'openpose' in control_model:
             return OpenPose(**kwargs)
         elif 'canny' in control_model:
             return Canny(**kwargs)
+        elif 'mediapipe_face' in control_model:
+            return MediaPipeFace(**kwargs)
         else:
             return Canny(**kwargs)
