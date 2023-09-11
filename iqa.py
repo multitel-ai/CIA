@@ -1,15 +1,16 @@
+import hydra
 import matplotlib.pyplot as plt
+from omegaconf import DictConfig
 import os
 from pathlib import Path
 import re
 from typing import List, Optional, Tuple
 from tqdm import tqdm
 
-import hydra
-from omegaconf import DictConfig
-
 from pyiqa import create_metric
 from pyiqa.models.inference_model import InferenceModel
+
+from logger import logger
 
 
 # In this file the approach to measure quality will be the extensive library
@@ -23,32 +24,27 @@ from pyiqa.models.inference_model import InferenceModel
 # Because images are generated there is no reference image to compare to. We
 # will be using with the no-reference metrics
 
+# Note that methods using here are agnostic to the content of the image, no
+# subjective or conceptual score is given.
+# Measures generated here only give an idea of how 'good looking' the images
+# are.
 
-# Some No-Reference methods:
-# - brisque: Blind/Referenceless Image Spatial Quality Evaluator (BRISQUE).
-#   A BRISQUE model is trained on a database of images with known distortions,
-#   and BRISQUE is limited to evaluating the quality of images with the same
-#   type of distortion. BRISQUE is opinion-aware, which means subjective quality
-#   scores accompany the training images.
-# - niqe: Natural Image Quality Evaluator (NIQE). Although a NIQE model is
-#   trained on a database of pristine images, NIQE can measure the quality of
-#   images with arbitrary distortion. NIQE is opinion-unaware, and does not use
-#   subjective quality scores. The tradeoff is that the NIQE score of an image
-#   might not correlate as well as the BRISQUE score with human perception of
-#   quality.
-# - piqe: 	Perception based Image Quality Evaluator (PIQE). The PIQE algorithm
-#   is opinion-unaware and unsupervised, which means it does not require a
-#   trained model. PIQE can measure the quality of images with arbitrary
-#   distortion and in most cases performs similar to NIQE. PIQE estimates
-#   block-wise distortion and measures the local variance of perceptibly
-#   distorted blocks to compute the quality score.
-# - biqi
-# - cornia
-# - hosa
-# - tv
-# - niqe
-# - ilniqe
-# - qac
+# Methods used:
+# - brisque: https://www.sciencedirect.com/science/article/abs/pii/S0730725X17301340
+# - cliipiqa: https://arxiv.org/pdf/2207.12396.pdf
+# - dbccn: https://arxiv.org/pdf/1907.02665v1.pdf
+# - niqe: https://live.ece.utexas.edu/research/quality/nrqa.html
+
+
+# Note that all score measure do not have the same range. Before plotting we
+# normalize.
+# Methods with an infinite range are of course not normalized.
+def normalize(metric, scores, avg_score):
+    if metric == 'brisque':
+        return scores, avg_score
+    elif metric == 'clipiqa' or ('clipiqa' in metric):
+        return [score * 100 for score in scores], avg_score * 100
+    return scores, avg_score
 
 
 def measure_several_images(metric: InferenceModel,
@@ -87,7 +83,9 @@ def main(cfg : DictConfig) -> None:
     # BASE PATHS, please used these when specifying paths
     data_path = cfg['data_path']
     # keep track of what feature was used for generation too in the name
-    GEN_DATA_PATH =  Path(data_path['base']) / (f"{data_path['generated']}_{cfg['model']['cn_use']}")
+    GEN_DATA_PATH =  Path(data_path['base']) / data_path['generated'] / cfg['model']['cn_use']
+
+    logger.info(f'Reading images from {GEN_DATA_PATH}')
 
     image_paths = [
         str(GEN_DATA_PATH / image_path)
@@ -100,20 +98,22 @@ def main(cfg : DictConfig) -> None:
    # See reasonment above.
     METRIC_MODE = 'NR'
 
-    all_iqa_metrics = cfg['iqa']['metrics']
-    metrics = [metric.lower() for metric in cfg['iqa']['current'] if metric.lower() in all_iqa_metrics]
+    metrics = [metric.lower() for metric in cfg['iqa']['metrics']]
     if not metrics:
         metrics = ['brisque']
-    device = cfg['model']['device']
+    device = cfg['iqa']['device']
+
+    logger.info(f'Using a {METRIC_MODE} approach, metrics: {metrics} and device: {device}')
 
     overall_scores = {}
     for metric_name in tqdm(metrics):
-        print('=' * 40)
-        print(f'Measure using {metric_name} metric.')
+        logger.info(f'Measure using {metric_name} metric.')
+
         iqa_model = create_metric(metric_name, device=device, metric_mode=METRIC_MODE)
         scores, avg_score = measure_several_images(iqa_model, image_paths)
+        scores, avg_score = normalize(metric_name, scores, avg_score)
+
         overall_scores[metric_name] = scores, avg_score
-    print('=' * 40)
 
     global_avg_score = 0
     for metric_name in overall_scores:
