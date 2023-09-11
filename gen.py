@@ -1,57 +1,41 @@
-import argparse
-import cv2
-import hydra
 import glob
-import os
-from omegaconf import DictConfig, OmegaConf
-from typing import Dict, List
+import hydra
+from omegaconf import DictConfig
+from pathlib import Path
 
 from diffusers.utils import load_image
-import numpy as np
-from pathlib import Path
-from PIL import Image
+import torch
 
-from extractors import * 
+from extractors import *
 from generators import SDCN
+from common import *
 
 
-# Best clear way that I have to do this for the moment
-extractors_dict = {
-    'canny': Canny,
-    'openpose': OpenPose,
-    'fusing_openpose': OpenPose,
-}
+# Do not let torch decide on best algorithm (we know better!)
+torch.backends.cudnn.benchmark=False
 
-def find_model_name(name: str, l: List[Dict[str, str]]) -> str:
-    for small_dict in l:
-        if name in small_dict:
-            return small_dict[name]
-    return None
+
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg : DictConfig) -> None:
+
     # BASE PATHS, please used these when specifying paths
     data_path = cfg['data_path']
-    REAL_DATA_PATH = Path(data_path['real'])
+    REAL_DATA_PATH = Path(data_path['base']) / data_path['real']
     # keep track of what feature was used for generation too in the name
-    GEN_DATA_PATH =  Path(data_path['base']) / (f"{data_path['generated']}_{cfg['model']['cn_use']}")
+    GEN_DATA_PATH =  Path(data_path['base']) / data_path['generated'] / cfg['model']['cn_use']
 
     # Specify the results path
     (GEN_DATA_PATH).mkdir(parents=True, exist_ok=True)
 
-    # Loading COCO should be here somwhere
-    formats = cfg['image_formats'] 
+    formats = cfg['image_formats']
     images = []
     for format in formats:
-        images += [ 
+        images += [
             *glob.glob(str(REAL_DATA_PATH.absolute()) + f'/*.{format}')
         ]
     images = [load_image(image_path) for image_path in images]
 
-    # We should explore what prompts are better ? Let's write a prompts generator
-    # number of prompts in the list = 
-    ## either number of images
-    ## or in case of 1 original image, it's the number of generations
     prompt = cfg['prompt']
     if isinstance(prompt['base'], str):
         positive_prompt = [prompt['base'] + ' ' + prompt['modifier'] + ' ' + prompt['quality']]
@@ -67,33 +51,46 @@ def main(cfg : DictConfig) -> None:
     # generator should be using the same feature.
     model_data = cfg['model']
     sd_model = model_data['sd']
-    
+
     cn_model = find_model_name(model_data['cn_use'], model_data['cn'])
     cn_model = cn_model if cn_model is not None else 'fusing/stable-diffusion-v1-5-controlnet-openpose'
-    
+
     seed = model_data['seed']
     device = model_data['device']
 
-    generator = SDCN(sd_model, cn_model, seed, device=device)
-    extractor = extractors_dict[
-        model_data['cn_use'] if model_data['cn_use'] in extractors_dict else 'canny'
-    ]()
+    if model_data['cn_use'] in model_data['cn_extra_settings']:
+        cn_extra_settings = model_data['cn_extra_settings'][model_data['cn_use']]
+    else:
+        cn_extra_settings = {}
 
+    generator = SDCN(
+        sd_model,
+        cn_model,
+        seed,
+        device = device,
+        cn_extra_settings = cn_extra_settings
+    )
+    extractor = Extractor(extract_model_from_name(model_data['cn_use']))
+
+    print(f'Results will be saved to {GEN_DATA_PATH}')
     # Generate from each image several synthetic images following the different prompts.
     for i, image in enumerate(images):
-        # Copy the original image to the same directory to ease the quality testing after.
-        image.save(GEN_DATA_PATH / f'b_{i+1}.png')
+        try:
+            # Copy the original image to the same directory to ease the quality testing after.
+            image.save(GEN_DATA_PATH / f'b_{i+1}.png')
 
-         # Feature extraction, save also the features.
-        feature = extractor.extract(image)
-        feature.save(GEN_DATA_PATH / f"f_{i+1}.png")
-        
-        # Generate with stable diffusion
-        output = generator.gen(feature, positive_prompt, negative_prompt)
+            # Feature extraction, save also the features.
+            feature = extractor.extract(image)
+            feature.save(GEN_DATA_PATH / f"f_{i+1}.png")
 
-        # save images
-        for j, img in enumerate(output.images):
-            img.save(GEN_DATA_PATH / f'{i+1}_{j+1}.png')
+            # Generate with stable diffusion
+            output = generator.gen(feature, positive_prompt, negative_prompt)
+
+            # save images
+            for j, img in enumerate(output.images):
+                img.save(GEN_DATA_PATH / f'{i+1}_{j+1}.png')
+        except Exception as e:
+            print('Image {i}: Exception during Extraction/SDCN', e)
 
 
 if __name__ == '__main__':
