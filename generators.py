@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List
 import random
-import re
+import json
 
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
 import torch
@@ -92,16 +92,11 @@ class SDCN:
         return output
 
 class Prompt:
-    def __init__(self) -> None:
+    def __init__(self, VOCAB_TEMPLATE_PATH) -> None:
 
-        self.vocabulary = {'gender':['man','women','boy','girl'], 'age':['infant','toddler','child','young','middle aged','old'],
-                           'color':['red','green','blue','white','cyan','magenta','yellow','black'], 'size':['big','small'], 'height':['short','height'],
-                           'clothes':['shirt','pant','hoody'], 'accessories':['hat','glasses','shoes','watch']}
+        self.vocabulary = json.load(open(VOCAB_TEMPLATE_PATH))['vocabulary']
 
-        self.prompt_templates = ['a opt_gender in a opt_color1 opt_clothes_top wearing opt_color2 opt_accessories',
-                                'a opt_gender in a opt_color1 opt_clothes_bottom with opt_background in the background',
-                                'a opt_gender standing on opt_ground with opt_background in the background',
-                                'a opt_gender in a opt_color1 opt_clothes_top and opt_color2 opt_clothes_bottom wearing a opt_color3 opt_accessories with opt_background in the background']
+        self.prompt_templates = json.load(open(VOCAB_TEMPLATE_PATH))['prompt_templates']
 
     def max_num_prompts(self, phrase: str) -> int:
         '''
@@ -158,43 +153,47 @@ class Prompt:
             phrase_counter = 1
             phrase_list = phrase.split()
             for phrase_word in phrase_list:
-                for vocabulary_class in self.vocabulary.keys():
-                    vocab_counter = 0
-                    if 'color' in phrase_word:
-                        vocab_counter = len(self.vocabulary['color'])
-                    elif 'opt' in phrase_word:
-                        vocab_counter = len(self.vocabulary[phrase_word[4:]])
-                    if vocab_counter>0:
-                        phrase_counter = phrase_counter*vocab_counter
-                        break
+                vocab_counter = 0
+                if 'color' in phrase_word:
+                    vocab_counter = len(self.vocabulary['color'])
+                elif 'opt' in phrase_word:
+                    vocab_counter = len(self.vocabulary[phrase_word[4:]])
+                if vocab_counter>0:
+                    phrase_counter = phrase_counter*vocab_counter
+                    continue
             counter = counter + phrase_counter
 
         return counter
 
     def template_prompts(self, num_prompts: int) -> list:
         '''
-        # Produces the template prompts
+        # Generates unique prompts from the template prompts
         Args: num_prompts; int; number of prompts that are required
         Returns: phrases; list; list of prompts
         '''
 
         phrases = []
         num_phrases = min(num_prompts, self.max_template_prompts())
-        while(len(phrases) < num_phrases):
 
+        while(len(phrases) < num_phrases):
             phrase = random.choice(self.prompt_templates)
-            # print(phrase)
-            phrases.extend([phrase
-                            .replace('opt_gender',random.choice(self.vocabulary['gender']))
-                            .replace('opt_age',random.choice(self.vocabulary['age']))
-                            .replace('opt_color1',random.choice(self.vocabulary['color']))
-                            .replace('opt_color2',random.choice(self.vocabulary['color']))
-                            .replace('opt_color3',random.choice(self.vocabulary['color']))
-                            .replace('opt_size',random.choice(self.vocabulary['size']))
-                            .replace('opt_height',random.choice(self.vocabulary['height']))
-                            .replace('opt_clothes_top',random.choice(self.vocabulary['clothes_top']))
-                            .replace('opt_clothes_bottom',random.choice(self.vocabulary['clothes_bottom']))
-                            .replace('opt_accessories',random.choice(self.vocabulary['accessories']))
-                            .replace('opt_ground',random.choice(self.vocabulary['ground']))
-                            .replace('opt_background',random.choice(self.vocabulary['background']))])
+            color_count = phrase.count('opt_color')
+            new_phrase = [phrase
+                          .replace('opt_gender',random.choice(self.vocabulary['gender']))
+                          .replace('opt_age',random.choice(self.vocabulary['age']))
+                          .replace('opt_size',random.choice(self.vocabulary['size']))
+                          .replace('opt_height',random.choice(self.vocabulary['height']))
+                          .replace('opt_clothes_top',random.choice(self.vocabulary['clothes_top']))
+                          .replace('opt_clothes_bottom',random.choice(self.vocabulary['clothes_bottom']))
+                          .replace('opt_accessories',random.choice(self.vocabulary['accessories']))
+                          .replace('opt_ground',random.choice(self.vocabulary['ground']))
+                          .replace('opt_background',random.choice(self.vocabulary['background']))]
+
+            for c in range(color_count+1):
+                new_phrase = [new_phrase[0]
+                            .replace(f'opt_color{c}',random.choice(self.vocabulary['color']))]
+
+            if new_phrase[0] not in phrases:
+                phrases.extend(new_phrase)
+
         return(phrases)
