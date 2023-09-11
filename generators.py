@@ -4,17 +4,20 @@ from typing import List
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
 import torch
 
+from logger import logger
+
 
 class SDCN:
     def __init__(self, sd_model: str, control_model: str, seed: int, device='cpu',  cn_extra_settings = {}):
 
-        print(f'Initializing SDCN with {sd_model} and {control_model}, seed = {seed}')
+        logger.info(f'Initializing SDCN with {sd_model} and {control_model}, seed ={seed}, device={device}')
 
         self.seed = seed
         self.device = device
+        self.control_model = control_model
 
         self.controlnet = ControlNetModel.from_pretrained(
-            control_model,
+            self.control_model,
             torch_dtype = torch.float16,
             **cn_extra_settings
         )
@@ -61,6 +64,9 @@ class SDCN:
         # floats if you try to use 'cuda'.
         self.pipe.enable_model_cpu_offload()
         self.pipe.enable_xformers_memory_efficient_attention()
+
+    def __str__(self) -> str:
+        return f'SDCN({self.control_model})'
 
     def gen(self,
             condition: np.array | List[np.array],
