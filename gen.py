@@ -70,8 +70,9 @@ def main(cfg : DictConfig) -> None:
         device = device,
         cn_extra_settings = cn_extra_settings
     )
-    extractor = Extractor(model_data['cn_use'])
+    extractor = Extractor(extract_model_from_name(model_data['cn_use']))
 
+    print(f'Results will be saved to {GEN_DATA_PATH}')
     # Generate from each image several synthetic images following the different prompts.
     for i, image in enumerate(images):
         try:
