@@ -86,6 +86,7 @@ class prompt:
         
         self.prompt_templates = json.load(open(VOCAB_TEMPLATE_PATH))['prompt_templates']
     
+    # Promts given for modification
     def max_num_prompts(self, phrase: str) -> int:
         '''
         # Calculates the maximum number of prompts that can be generated for the given phrase
@@ -129,6 +130,7 @@ class prompt:
         
         return phrase_list
     
+    # Templates given for reference
     def max_template_prompts(self) -> int:
         ''''
         # Counts the maximum number of template prompts that can be generated with the exisitng prompt_templates
