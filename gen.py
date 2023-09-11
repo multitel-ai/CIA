@@ -1,25 +1,24 @@
-import argparse
-import cv2
-import hydra
 import glob
-import os
-from omegaconf import DictConfig, OmegaConf
-from typing import Dict, List
+import hydra
+from omegaconf import DictConfig
+from pathlib import Path
 
 from diffusers.utils import load_image
-import numpy as np
-from pathlib import Path
-from PIL import Image
+import torch
 
-from extractors import * 
+from extractors import *
 from generators import SDCN
 from common import *
 
-import torch 
+
+# Do not let torch decide on best algorithm (we know better!)
 torch.backends.cudnn.benchmark=False
+
+
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg : DictConfig) -> None:
+
     # BASE PATHS, please used these when specifying paths
     data_path = cfg['data_path']
     REAL_DATA_PATH = Path(data_path['base']) / data_path['real']
@@ -29,19 +28,14 @@ def main(cfg : DictConfig) -> None:
     # Specify the results path
     (GEN_DATA_PATH).mkdir(parents=True, exist_ok=True)
 
-    # Loading COCO should be here somewhere
-    formats = cfg['image_formats'] 
+    formats = cfg['image_formats']
     images = []
     for format in formats:
-        images += [ 
+        images += [
             *glob.glob(str(REAL_DATA_PATH.absolute()) + f'/*.{format}')
         ]
     images = [load_image(image_path) for image_path in images]
 
-    # We should explore what prompts are better ? Let's write a prompts generator
-    # number of prompts in the list = 
-    ## either number of images
-    ## or in case of 1 original image, it's the number of generations
     prompt = cfg['prompt']
     if isinstance(prompt['base'], str):
         positive_prompt = [prompt['base'] + ' ' + prompt['modifier'] + ' ' + prompt['quality']]
@@ -57,10 +51,10 @@ def main(cfg : DictConfig) -> None:
     # generator should be using the same feature.
     model_data = cfg['model']
     sd_model = model_data['sd']
-    
+
     cn_model = find_model_name(model_data['cn_use'], model_data['cn'])
     cn_model = cn_model if cn_model is not None else 'fusing/stable-diffusion-v1-5-controlnet-openpose'
-    
+
     seed = model_data['seed']
     device = model_data['device']
 
@@ -70,10 +64,10 @@ def main(cfg : DictConfig) -> None:
         cn_extra_settings = {}
 
     generator = SDCN(
-        sd_model, 
-        cn_model, 
-        seed, 
-        device = device, 
+        sd_model,
+        cn_model,
+        seed,
+        device = device,
         cn_extra_settings = cn_extra_settings
     )
     extractor = Extractor(model_data['cn_use'])
@@ -87,7 +81,7 @@ def main(cfg : DictConfig) -> None:
             # Feature extraction, save also the features.
             feature = extractor.extract(image)
             feature.save(GEN_DATA_PATH / f"f_{i+1}.png")
-            
+
             # Generate with stable diffusion
             output = generator.gen(feature, positive_prompt, negative_prompt)
 
@@ -96,6 +90,7 @@ def main(cfg : DictConfig) -> None:
                 img.save(GEN_DATA_PATH / f'{i+1}_{j+1}.png')
         except Exception as e:
             print('Image {i}: Exception during Extraction/SDCN', e)
+
 
 if __name__ == '__main__':
     main()

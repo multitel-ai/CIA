@@ -7,20 +7,20 @@ import torch
 
 class SDCN:
     def __init__(self, sd_model: str, control_model: str, seed: int, device='cpu',  cn_extra_settings = {}):
-        
+
         print(f'Initializing SDCN with {sd_model} and {control_model}, seed = {seed}')
 
         self.seed = seed
         self.device = device
 
         self.controlnet = ControlNetModel.from_pretrained(
-            control_model, 
+            control_model,
             torch_dtype = torch.float16,
             **cn_extra_settings
         )
         self.pipe = StableDiffusionControlNetPipeline.from_pretrained(
-            sd_model, 
-            controlnet = self.controlnet, 
+            sd_model,
+            controlnet = self.controlnet,
             torch_dtype = torch.float16,
             safety_checker = None,
         )
