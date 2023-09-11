@@ -9,8 +9,11 @@
     "color":["red","green","blue","white","cyan","magenta","yellow","black"], 
     "size":["big","small"], 
     "height":["short","height"], 
-    "clothes":["shirt","pant","hoody"], 
-    "accessories":["hat","glasses","shoes","watch"]
+    "clothes_top":["shirt","tshirt","hoody","jacket"],
+    "clothes_bottom":["pant", "trouser"],
+    "accessories":["hat","glasses","shoes","watch"],
+    "ground":["sand","grass","snow"], 
+    "background":["forest","tree","stadium","river","sea","door","light","graffiti"]
     },
     "prompt_templates":[
         "a opt_gender in a opt_color1 opt_clothes_top wearing opt_color2 opt_accessories",
