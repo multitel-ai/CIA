@@ -97,7 +97,6 @@ class Prompt:
         self.vocabulary = json.load(open(VOCAB_TEMPLATE_PATH))['vocabulary']
 
         self.prompt_templates = json.load(open(VOCAB_TEMPLATE_PATH))['prompt_templates']
-
     def max_num_prompts(self, phrase: str) -> int:
         '''
         # Calculates the maximum number of prompts that can be generated for the given phrase
