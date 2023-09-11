@@ -7,7 +7,7 @@ image_formats: ['jpeg', 'jpg']
 prompt:
   base: ["Sandra Oh", "Kim Kardashian", "rihanna ", "taylor swift"]
   quality: "showing emotion, great realistic face, best quality, extremely detailed,"
-  modifier: "Happy man smiling" 
+  modifier: "Happy man smiling"
   negative: [
     "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion,",
     "distortion, bad quality, lowres, cropped, bad focus, blurry, ad compression, bad artifact,",
@@ -26,11 +26,10 @@ model:
     # Canny
     - lllyasviel_canny: lllyasviel/sd-controlnet-canny
     - lllyasviel_scribble_canny: lllyasviel/sd-controlnet-scribble
-    
+
     # OpenPose
     - lllyasviel_openpose: lllyasviel/sd-controlnet-openpose
     - fusing_openpose: fusing/stable-diffusion-v1-5-controlnet-openpose
-<<<<<<< HEAD
     - frankjoshua_openpose: frankjoshua/control_v11p_sd15_openpose
 
     # MediaPipeFace
@@ -43,14 +42,10 @@ model:
     # - scribble: lllyasviel/sd-controlnet-scribble
     # - segmentation: lllyasviel/sd-controlnet-seg
     # - mlsd: lllyasviel/sd-controlnet-mlsd
-    
+
   cn_extra_settings:
     crucible_mediapipe_face:
       subfolder: diffusion_sd15
-  seed: 34567
-  device: cuda
-
-=======
   seed: 34567
   device: cuda
 iqa:
@@ -61,9 +56,4 @@ iqa:
     'musiq-paq2piq', 'musiq-spaq', 'nima', 'nima-vgg16-ava', 'niqe', 'nlpd', 'nrqm', 'paq2piq', 'pi', 'pieapp',
     'psnr', 'psnry', 'ssim', 'ssimc', 'tres', 'tres-flive', 'tres-koniq', 'uranker', 'vif', 'vsi'
   ]
-<<<<<<< HEAD
-  current: 'brisque'
->>>>>>> [ADD] adding quality measures
-=======
   current: ['brisque', 'niqe', 'ilniqe', 'entropy']
->>>>>>> [IMP] iqa framework can now be pipelined

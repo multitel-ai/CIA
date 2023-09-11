@@ -1,21 +1,24 @@
-import hydra
 import glob
+import hydra
 from omegaconf import DictConfig
-from typing import Dict, List
+from pathlib import Path
 
 from diffusers.utils import load_image
-from pathlib import Path
+import torch
 
 from extractors import *
 from generators import SDCN
 from common import *
 
-import torch
+
+# Do not let torch decide on best algorithm (we know better!)
 torch.backends.cudnn.benchmark=False
+
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg : DictConfig) -> None:
+
     # BASE PATHS, please used these when specifying paths
     data_path = cfg['data_path']
     REAL_DATA_PATH = Path(data_path['base']) / data_path['real']
@@ -25,7 +28,6 @@ def main(cfg : DictConfig) -> None:
     # Specify the results path
     (GEN_DATA_PATH).mkdir(parents=True, exist_ok=True)
 
-    # Loading COCO should be here somewhere
     formats = cfg['image_formats']
     images = []
     for format in formats:
@@ -88,6 +90,7 @@ def main(cfg : DictConfig) -> None:
                 img.save(GEN_DATA_PATH / f'{i+1}_{j+1}.png')
         except Exception as e:
             print('Image {i}: Exception during Extraction/SDCN', e)
+
 
 if __name__ == '__main__':
     main()

@@ -12,8 +12,23 @@ from mediapipe.tasks.python import vision
 
 from common import draw_landmarks_on_image
 
-# !!!
-# All extractors should have the same api: extract(img: Image) -> Image
+
+
+AVAILABLE_EXTRACTORS = ('openpose', 'canny', 'mediapipe_face')
+
+
+class Extractor:
+    def __new__(cls, control_model: str, **kwargs):
+        if control_model not in AVAILABLE_EXTRACTORS:
+            raise Exception(f'Unknown control model: {control_model}')
+
+        if 'openpose' in control_model:
+            return OpenPose(**kwargs)
+        elif 'canny' in control_model:
+            return Canny(**kwargs)
+        elif 'mediapipe_face' in control_model:
+            return MediaPipeFace(**kwargs)
+
 
 class Canny:
     def __init__(self, auto_threshold: bool = False, low_threshold: int = 100, high_threshold: int = 200, **kwargs):
@@ -23,11 +38,11 @@ class Canny:
 
     def canny_get_thresholds(self, image: np.array) -> Tuple[float, float]:
 
-        '''
+        """
         Args: image; numpy array of RGB image
         Returns: low; float; the lower threshold value for canny edge detector
                  high; float; the upper threshold value for canny edge detector
-        '''
+        """
 
         img_median = np.median(image)
         img_std = np.std(image)
@@ -37,10 +52,10 @@ class Canny:
 
     def extract(self, image: Image) -> Image:
 
-        '''
+        """
         Arg: image; Image; image in pillow format
         Returns: canny_image; Image; image with edges marked
-        '''
+        """
 
         image = np.array(image)
 
@@ -79,19 +94,9 @@ class MediaPipeFace:
         image = np.array(image)
         image_mp = mp.Image(image_format = mp.ImageFormat.SRGB, data = image)
         detection_result = self.detector.detect(image_mp)
+
         annotated_image = draw_landmarks_on_image(image, detection_result)
         annotated_image = cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR)
         annotated_image = Image.fromarray(annotated_image)
+
         return annotated_image
-
-
-class Extractor:
-    def __new__(cls, control_model: str, **kwargs):
-        if 'openpose' in control_model:
-            return OpenPose(**kwargs)
-        elif 'canny' in control_model:
-            return Canny(**kwargs)
-        elif 'mediapipe_face' in control_model:
-            return MediaPipeFace(**kwargs)
-        else:
-            return Canny(**kwargs)
