@@ -17,6 +17,17 @@ from common import draw_landmarks_on_image
 AVAILABLE_EXTRACTORS = ('openpose', 'canny', 'mediapipe_face')
 
 
+def extract_model_from_name(raw_name: str) -> str:
+    if 'openpose' in raw_name:
+        return 'openpose'
+    elif 'canny' in raw_name:
+        return 'canny'
+    elif 'mediapipe' in raw_name:
+        return 'mediapipe_face'
+    else:
+        raise Exception(f'Unkown model: {raw_name}')
+
+
 class Extractor:
     def __new__(cls, control_model: str, **kwargs):
         if control_model not in AVAILABLE_EXTRACTORS:
