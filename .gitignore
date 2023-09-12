@@ -170,3 +170,5 @@ bank*
 datasets*
 multirun*
 .vscode*
+wandb*
+*.pt
