@@ -16,14 +16,11 @@ We recommend using a virtual environment ;)
 
 We experimented with PEOPLE from the COCO datasets :
 
+As always `run` will take care of it.
 ```
-# Download COCO Person
-chmod +x download_coco.sh
-./download_coco.sh
-
-# Extract images, captions, and bbox labels
-python prep_coco.py
+./run.sh coco
 ```
+Data will be downloaded and put in the respective files for images, labels and captions.
 
 ## List of some tested SD models and Compatible ControlNet Models :
 
@@ -79,7 +76,7 @@ You will find your images in `bank/data/mysupertest_openpose` along with the bas
 Here's an example of a multi-run with 3 different generators :
 
 ```
-python gen.py -m model.cn_use=frankjoshua_openpose,fusing_openpose,lllyasviel_openpose
+./run.sh gen model.cn_use=frankjoshua_openpose,fusing_openpose,lllyasviel_openpose
 ```
 
 List of available models can be found in `conf/config.yaml`. We have 3 available extractors at the moment (OpenPose, Canny, MediaPipeFace), If you add another control net model, make sure you add one of the following strings to its name to set the extractor to use :
@@ -122,7 +119,7 @@ This are of course in the `config.yaml` file and can be changed statically or dy
 
 
 
-## Create Dataset and Train : 
+## Create Dataset and Train :
 
 ```
 python create_dataset.py --real_images_dir ./bank/real/ --syn_images_dir ./bank/real/ --txt_dir ./bank/  --n_file 0 --per_syn_data 0
