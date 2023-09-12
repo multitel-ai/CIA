@@ -12,3 +12,4 @@ pyiqa
 pycocotools
 transformers
 xformers
+wandb

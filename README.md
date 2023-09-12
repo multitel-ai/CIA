@@ -107,3 +107,13 @@ that is, the directory has the name `<name chosen by the user>_<cn model used to
 This are of course in the `config.yaml` file and can be changed statically or dynamically.
 
 <img src="docs/images/iqa_measure.png" />
+
+
+
+## Create Dataset and Train : 
+
+```
+python create_dataset.py --real_images_dir ./bank/real/ --syn_images_dir ./bank/real/ --txt_dir ./bank/  --n_file 0 --per_syn_data 0
+
+python train.py
+```
