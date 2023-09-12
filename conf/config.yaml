@@ -11,6 +11,9 @@ ml:  # put everything related to machine learning here: dataset size, ratio betw
   epochs: 300
 image_formats: ['jpeg', 'jpg']
 prompt:
+  template: vocabulary
+  modify_captions: 1
+  generation_size: 10
   base: ["Sandra Oh", "Kim Kardashian", "rihanna ", "taylor swift"]
   quality: "showing emotion, great realistic face, best quality, extremely detailed,"
   modifier: "Happy man smiling"
@@ -26,6 +29,8 @@ prompt:
   ]
   negative_simple: "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion, disfigured, mutation, deformed mouth, deformed eyes, unnatural teeth, unnatural eyes, unnatural mouth, unnatural face, unnatural face expression, not human"
 model:
+  use_captions: 1
+  use_labels: 0
   augmentation_percent: 0
   sd: runwayml/stable-diffusion-v1-5
   cn_use: frankjoshua_openpose

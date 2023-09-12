@@ -35,6 +35,7 @@ from logger import logger
 # - dbccn: https://arxiv.org/pdf/1907.02665v1.pdf
 # - niqe: https://live.ece.utexas.edu/research/quality/nrqa.html
 
+# TODO: some metrics already exists on pytorch, see if we can bypass the pytorch-iqa module
 
 # Note that all score measure do not have the same range. Before plotting we
 # normalize.
