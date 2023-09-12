@@ -1,8 +1,11 @@
 data_path:
-  base: 'bank'
+  base: ['bank', 'data']  # this way it can be used also in DOS systems
   real: 'real'
   generated: 'generated'
   datasets: 'datasets'
+ml:  # put everything related to machine learning here: dataset size, ratio between train and test, learning rate ...
+  val_nb: 300
+  test_nb: 300
 image_formats: ['jpeg', 'jpg']
 prompt:
   base: ["Sandra Oh", "Kim Kardashian", "rihanna ", "taylor swift"]

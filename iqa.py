@@ -10,7 +10,7 @@ from tqdm import tqdm
 from pyiqa import create_metric
 from pyiqa.models.inference_model import InferenceModel
 
-from logger import logger
+from common import logger
 
 
 # In this file the approach to measure quality will be the extensive library
@@ -83,7 +83,8 @@ def main(cfg : DictConfig) -> None:
     # BASE PATHS, please used these when specifying paths
     data_path = cfg['data_path']
     # keep track of what feature was used for generation too in the name
-    GEN_DATA_PATH =  Path(data_path['base']) / data_path['generated'] / cfg['model']['cn_use']
+    base_path = os.path.join(*data_path['base'])
+    GEN_DATA_PATH =  Path(base_path) / data_path['generated'] / cfg['model']['cn_use']
 
     logger.info(f'Reading images from {GEN_DATA_PATH}')
 
