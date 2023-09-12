@@ -1,5 +1,5 @@
 data_path:
-  base: 'bank/data'
+  base: 'bank'
   real: 'real'
   generated: 'generated'
   datasets: 'datasets'
