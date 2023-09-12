@@ -13,7 +13,6 @@ from mediapipe.tasks.python import vision
 from common import draw_landmarks_on_image
 
 
-
 AVAILABLE_EXTRACTORS = ('openpose', 'canny', 'mediapipe_face')
 
 
@@ -81,6 +80,9 @@ class Canny:
         canny_image = Image.fromarray(image)
         return canny_image
 
+    def __str__(self) -> str:
+        return 'Extractor(canny)'
+
 
 class OpenPose:
     def __init__(self, model: str = 'lllyasviel/ControlNet', **kwargs):
@@ -90,6 +92,9 @@ class OpenPose:
         image = np.array(image)
         pose = self.model(image)
         return pose
+
+    def __str__(self) -> str:
+        return 'Extractor(openpose)'
 
 
 class MediaPipeFace:
@@ -111,3 +116,6 @@ class MediaPipeFace:
         annotated_image = Image.fromarray(annotated_image)
 
         return annotated_image
+
+    def __str__(self) -> str:
+        return 'Extractor(mediapipe_face)'

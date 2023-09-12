@@ -49,11 +49,5 @@ model:
   seed: 34567
   device: cuda
 iqa:
-  metrics: [
-    'ahiq', 'brisque', 'ckdn', 'clipiqa', 'clipiqa+', 'clipiqa+_rn50_512', 'clipiqa+_vitL14_512', 'clipscore',
-    'cnniqa', 'cw_ssim', 'dbcnn', 'dists', 'entropy', 'fid', 'fsim', 'gmsd', 'hyperiqa', 'ilniqe', 'lpips',
-    'lpips-vgg', 'mad', 'maniqa', 'maniqa-kadid', 'maniqa-koniq', 'ms_ssim', 'musiq', 'musiq-ava', 'musiq-koniq',
-    'musiq-paq2piq', 'musiq-spaq', 'nima', 'nima-vgg16-ava', 'niqe', 'nlpd', 'nrqm', 'paq2piq', 'pi', 'pieapp',
-    'psnr', 'psnry', 'ssim', 'ssimc', 'tres', 'tres-flive', 'tres-koniq', 'uranker', 'vif', 'vsi'
-  ]
-  current: ['brisque', 'niqe', 'ilniqe', 'entropy']
+  device: cuda
+  metrics: ['brisque', 'clipiqa+', 'dbcnn', 'ilniqe', 'niqe', nima]
