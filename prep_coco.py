@@ -7,6 +7,7 @@ from pathlib import Path
 from pycocotools.coco import COCO
 
 VAL_NB = TEST_NB = 300
+TRAIN_NB = 5000
 
 def cocobox2yolo(img_path, coco_box):
 	I = cv2.imread(img_path)
@@ -109,7 +110,7 @@ def main(cfg: DictConfig) -> None:
 				images_dir = Path(str(real_data_images).replace('/real/', '/test/'))
 				labels_dir = Path(str(real_data_labels).replace('/real/', '/test/'))
 				test_dir = Path(str(real_data_captions).replace('/real/', '/test/'))
-			else:
+			elif counter < VAL_NB + TEST_NB + TRAIN_NB:
 				images_dir = real_data_images
 				labels_dir = real_data_labels
 				test_dir = real_data_captions
