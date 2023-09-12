@@ -95,12 +95,24 @@ One way of testing the quality of the generated images is to use computational a
 methods. One good library for it is [IQA-PyTroch](https://github.com/chaofengc/IQA-PyTorch), you
 can go read its [paper](https://arxiv.org/pdf/2208.14818.pdf).
 
+
+Because images are generated there is no reference image to compare to. We will be using with the
+no-reference metrics Note that methods using here are agnostic to the content of the image, no
+subjective or conceptual score is given. Measures generated here only give an idea of how
+*good looking* the images are.
+
+Methods used:
+  - [brisque](https://www.sciencedirect.com/science/article/abs/pii/S0730725X17301340)
+  - [cliipiqa](https://arxiv.org/pdf/2207.12396.pdf)
+  - [dbccn](https://arxiv.org/pdf/1907.02665v1.pdf)
+  - [niqe](https://live.ece.utexas.edu/research/quality/nrqa.html)
+
+
 You can use these measures in the same way the generation is done:
 ```bash
 ./run iqa
 ```
 It follows the same configuration that the generation part, with the same file `conf/config.yaml`.
-You can select from a variety of methods and even test several at the same time.
 
 **Note**: `iqa` is going to search for a directory following the same naming convention that `gen.py`,
 that is, the directory has the name `<name chosen by the user>_<cn model used to generate>`.

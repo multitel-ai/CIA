@@ -3,7 +3,9 @@ import argparse
 import random
 import yaml
 
-def create_mixte_dataset(real_images_dir, syn_images_dir, txt_dir, per_syn_data, n_file):
+from logger import logger
+
+def create_mixte_dataset(real_images_dir: str, syn_images_dir: str, txt_dir: str, per_syn_data: float, n_file: int):
     """
     Construct the txt file containing a percentage of real and synthetic data
     :param real_images_dir: path to the folder containing real images
@@ -92,7 +94,7 @@ def run():
                         help='Percentage of synthetic data compared to real ones used for pre-training')
     parser.add_argument("--n_file", type=int, help='Number of the file')
     args = parser.parse_args()
-    print(f"Command line arguments: {args}")
+    logger.info(f"Command line arguments: {args}")
 
     create_mixte_dataset(args.real_images_dir, args.syn_images_dir, args.txt_dir, args.per_syn_data, args.n_file)
 
