@@ -13,3 +13,5 @@ pycocotools
 transformers
 xformers
 wandb
+wget
+zipfile
