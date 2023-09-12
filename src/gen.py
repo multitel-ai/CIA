@@ -15,7 +15,7 @@ from generators import SDCN
 torch.backends.cudnn.benchmark=False
 
 
-@hydra.main(version_base=None, config_path="conf", config_name="config")
+@hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg : DictConfig) -> None:
 
     # BASE PATHS, please used these when specifying paths
