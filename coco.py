@@ -1,6 +1,7 @@
 import cv2
 import hydra
 import os
+import shutil
 import wget
 import zipfile
 
@@ -68,21 +69,22 @@ def download_coco(data_path: Path,
         with zipfile.ZipFile(path_to_annotations_zip, 'r') as zip_ref:
             zip_ref.extractall(str(data_path))
 
-    return image_path, annotations_path
+    return image_path, annotations_path, bbx_path, caps_path
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg: DictConfig) -> None:
 
     # Get all paths
     data_path = cfg['data_path']
-    REAL_DATA_PATH = Path(data_path['base']) / data_path['real']
+    base_path = os.path.join(*data_path['base'])
+    REAL_DATA_PATH = Path(base_path) / data_path['real']
     COCO_PATH = REAL_DATA_PATH / 'coco'
 
     REAL_DATA_PATH.mkdir(parents=True, exist_ok=True)
     COCO_PATH.mkdir(parents=True, exist_ok=True)
 
     # Download if necessary
-    image_path, annotations_path = download_coco(COCO_PATH)
+    image_path, annotations_path, bbx_path, caps_path = download_coco(COCO_PATH)
     coco_version = 'train2017'
 
     annFile = annotations_path / f'instances_{coco_version}.json'
@@ -97,7 +99,7 @@ def main(cfg: DictConfig) -> None:
     all_images = list(image_path.glob('*.jpg'))
 
     logger.info(f'Writting captions and boxes info ...')
-    for img_path in tqdm(all_images):
+    for img_path in tqdm(all_images, unit='img'):
         img_path = str(img_path.absolute())
         img_id = int(img_path.split('/')[-1].split('.jpg')[0])
         Keypoints_annIds = coco_keypoints.getAnnIds(imgIds = img_id, catIds = catIds, iscrowd = None)
@@ -118,6 +120,58 @@ def main(cfg: DictConfig) -> None:
         with open(captions_text_path, 'w') as file:
             captions = [caps['caption'] for caps in caps_anns]
             file.write('\n'.join(captions))
+
+    # Prepare the data for training and validation
+    real_data_images = REAL_DATA_PATH / 'images'
+    real_data_labels = REAL_DATA_PATH / 'labels'
+    real_data_captions = REAL_DATA_PATH / 'captions'
+
+    real_data_images.mkdir(parents=True, exist_ok=True)
+    real_data_labels.mkdir(parents=True, exist_ok=True)
+    real_data_captions.mkdir(parents=True, exist_ok=True)
+
+    TEST_NB = cfg['ml']['test_nb']
+    VAL_NB = cfg['ml']['val_nb']
+
+    logger.info(f'Moving images to {str(real_data_images)}')
+    logger.info(f'Moving captions to {str(real_data_labels)}')
+    logger.info(f'Moving boxes to {str(real_data_captions)}')
+    logger.info(f'Using values test: {TEST_NB} and validation: {VAL_NB}')
+
+    # move all files
+    counter = 0
+    for file_name in tqdm(os.listdir(image_path), unit='img'):
+        counter += 1
+
+        name =  file_name.split('.')[0]
+        img_file = name + '.jpg'
+        txt_file = name + '.txt'
+
+        image = image_path / img_file
+        label = bbx_path / txt_file
+        caption = caps_path / txt_file
+
+        if os.path.isfile(image) and os.path.isfile(label) and os.path.isfile(caption):
+            if counter < VAL_NB:
+                images_dir = Path(str(real_data_images).replace('/real/', '/val/'))
+                labels_dir = Path(str(real_data_labels).replace('/real/', '/val/'))
+                test_dir = Path(str(real_data_captions).replace('/real/', '/val/'))
+            elif counter < VAL_NB + TEST_NB:
+                images_dir = Path(str(real_data_images).replace('/real/', '/test/'))
+                labels_dir = Path(str(real_data_labels).replace('/real/', '/test/'))
+                test_dir = Path(str(real_data_captions).replace('/real/', '/test/'))
+            else:
+                images_dir = real_data_images
+                labels_dir = real_data_labels
+                test_dir = real_data_captions
+
+            images_dir.mkdir(parents=True, exist_ok=True)
+            labels_dir.mkdir(parents=True, exist_ok=True)
+            test_dir.mkdir(parents=True, exist_ok=True)
+
+            shutil.copy(image, images_dir / img_file)
+            shutil.copy(label, labels_dir / txt_file)
+            shutil.copy(caption, test_dir / txt_file)
 
 
 if __name__ == "__main__":
