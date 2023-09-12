@@ -2,6 +2,7 @@ import glob
 import hydra
 from omegaconf import DictConfig
 import os
+import random
 from pathlib import Path
 
 from diffusers.utils import load_image
@@ -9,7 +10,7 @@ import torch
 
 from common import *
 from extractors import *
-from generators import SDCN
+from generators import SDCN, PromptGenerator
 from logger import logger
 
 # Do not let torch decide on best algorithm (we know better!)
@@ -18,27 +19,35 @@ torch.backends.cudnn.benchmark=False
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg : DictConfig) -> None:
-
-    # BASE PATHS, please used these when specifying paths
     data_path = cfg['data_path']
     base_path = os.path.join(*data_path['base'])
     REAL_DATA_PATH = Path(base_path) / data_path['real']
-    # keep track of what feature was used for generation too in the name
+
+    real_images_path = REAL_DATA_PATH / 'images'
+    real_captions_path = REAL_DATA_PATH / 'captions'
+    real_labels_path = REAL_DATA_PATH / 'labels'
+
+    # Keep track of what feature was used for generation too in the name.
     GEN_DATA_PATH =  Path(base_path) / data_path['generated'] / cfg['model']['cn_use']
 
-    # Specify the results path
+    # Create the generated directory if necessary.
     (GEN_DATA_PATH).mkdir(parents=True, exist_ok=True)
 
     formats = cfg['image_formats']
-    images = []
+    real_images = []
     for format in formats:
-        images += [
-            *glob.glob(str(REAL_DATA_PATH.absolute()) + f'/images/*.{format}')
+        real_images += [
+            *glob.glob(str(real_images_path.absolute()) + f'/*.{format}')
         ]
-    print(images)
-    # images = [load_image(image_path) for image_path in images]
+    real_images.sort()
+    real_images_path = real_images
+    real_dataset_size = len(real_images_path)
 
     prompt = cfg['prompt']
+    modify_captions = bool(prompt['modify_captions'])
+    prompt_generation_size = prompt['generation_size']
+    promp_generator = PromptGenerator(prompt['template']) if modify_captions else None
+
     if isinstance(prompt['base'], str):
         positive_prompt = [prompt['base'] + ' ' + prompt['modifier'] + ' ' + prompt['quality']]
         negative_prompt = [''.join(prompt['negative_simple'])]
@@ -53,6 +62,27 @@ def main(cfg : DictConfig) -> None:
     # generator should be using the same feature.
     model_data = cfg['model']
     sd_model = model_data['sd']
+
+    use_captions = bool(model_data['use_captions'])
+    use_labels = bool(model_data['use_labels'])
+
+    if use_captions:
+        real_captions_path = glob.glob(str(real_captions_path.absolute()) + f'/*')
+        real_captions_path.sort()
+        if len(real_captions_path) != real_dataset_size:
+            raise Exception("Cannot use a captions dataset of different size!")
+        logger.info("Using captions")
+    else:
+        real_captions_path = []
+
+    if use_labels:
+        real_labels_path = glob.glob(str(real_labels_path.absolute()) + f'/*')
+        real_labels_path.sort()
+        if len(real_labels_path) != real_dataset_size:
+            raise Exception("Cannot use a labels dataset of different size!")
+        logger.info("Using labels")
+    else:
+        real_labels_path = []
 
     cn_model = find_model_name(model_data['cn_use'], model_data['cn'])
     cn_model = cn_model if cn_model is not None else 'fusing/stable-diffusion-v1-5-controlnet-openpose'
@@ -77,7 +107,13 @@ def main(cfg : DictConfig) -> None:
 
     logger.info(f'Results will be saved to {GEN_DATA_PATH}')
     # Generate from each image several synthetic images following the different prompts.
-    for image_path in images:
+
+    for idx in range(real_dataset_size):
+        image_path = real_images_path[idx]
+
+        caption_path = real_captions_path[idx] if use_captions else None
+        label_path = real_labels_path[idx] if use_labels else None
+
         try:
             image = load_image(image_path)
             image_name = image_path.split(f'{os.sep}')[-1].split('.')[0]
@@ -88,8 +124,24 @@ def main(cfg : DictConfig) -> None:
             # Feature extraction, save also the features.
             feature = extractor.extract(image)
 
-            # this is feature debugging 
+            # this is feature debugging
             # feature.save(GEN_DATA_PATH / f"f_{i+1}.png")
+
+            # Here we use captions if necessary and modify them if necessary.
+            if use_captions:
+                positive_prompt = [p.lower() for p in read_caption(caption_path)]
+                negative_prompt = [''.join(prompt['negative_simple'])] * len(positive_prompt)
+
+                if modify_captions:
+                    def modify_prompt(p):
+                        modified_list = promp_generator.prompts(prompt_generation_size, p)
+                        cleaned_list = list(filter(lambda new_p: new_p != p , modified_list))
+                        if not cleaned_list:
+                            logger.info(f"No new prompt created for caption \"{p}\", using the same.")
+                            return p
+                        return random.choice(cleaned_list)
+
+                    positive_prompt = [modify_prompt(p) for p in positive_prompt]
 
             # Generate with stable diffusion
             output = generator.gen(feature, positive_prompt, negative_prompt)
@@ -99,7 +151,10 @@ def main(cfg : DictConfig) -> None:
                 img.save(GEN_DATA_PATH / f'{image_name}_{j + 1}.png')
 
         except Exception as e:
-            logger.info('Image {i}: Exception during Extraction/SDCN', e)
+            logger.info(f'Image {image_path}: Exception during Extraction/SDCN', e)
+
+        if (idx + 1) % 50 == 0:
+            logger.info(f"Treated {idx + 1} images ({(idx)/real_dataset_size * 100}%).")
 
 
 if __name__ == '__main__':

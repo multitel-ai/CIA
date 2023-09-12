@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List
 import random
-import json
+from hydra import compose
 
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
 import torch
@@ -58,7 +58,7 @@ class SDCN:
         )
 
         # Move the whole pipe to the designed device to avoid malformed cuda/cpu instructions
-        self.pipe.to(device)
+        # self.pipe.to(device)
 
         # The line below is explained in https://huggingface.co/blog/controlnet but sometimes
         # it will throw an error later in the pipeline about having or not instructions for half
@@ -91,61 +91,57 @@ class SDCN:
 
         return output
 
-class Prompt:
-    def __init__(self, VOCAB_TEMPLATE_PATH) -> None:
 
-        self.vocabulary = json.load(open(VOCAB_TEMPLATE_PATH))['vocabulary']
+class PromptGenerator:
+    def __init__(self, config_name='vocabulary'):
+        cfg = compose(config_name=config_name)
 
-        self.prompt_templates = json.load(open(VOCAB_TEMPLATE_PATH))['prompt_templates']
-    def max_num_prompts(self, phrase: str) -> int:
-        '''
-        # Calculates the maximum number of prompts that can be generated for the given phrase
-        Args: phrase; str; The basic prompt that needs to be changed based on options in vocabulary
+        self.vocabulary = cfg['vocabulary']
+        self.prompt_templates = cfg['prompt_templates']
 
-        Returns: num_prompts; int; The maximum number of prompts that can be generated for the given phrase
-        '''
+    def _change_token(self, token: str) -> str:
+        # Search in the vocabulary for words in the same family, pick one
+        # if possible and return it
+        for vocabulary_class in self.vocabulary:
+            if token in self.vocabulary[vocabulary_class]:
+                other_tokens = list(filter(
+                    lambda word: token != word, self.vocabulary[vocabulary_class]
+                ))
+                if other_tokens:
+                    return random.choice(other_tokens)
+        return token
 
-        num_prompts = 1
-        phrase_list = phrase.lower().split()
-        for phrase_loc in range(len(phrase_list)):
-            for vocabulary_class in self.vocabulary.keys():
-                if phrase_list[phrase_loc] in self.vocabulary[vocabulary_class]:
-                    num_prompts = num_prompts * len(self.vocabulary[vocabulary_class])
-                    break
+    def prompts(self, num_prompts: int, phrase: str) -> List[str]:
+        """
+        Generates unique and different prompts in the format of the given phrase.
+        It works by tokenizing the given phrase and changing each token whenever
+        a match is found
 
-        return(num_prompts)
+        :param int num_prompts: maximum number of prompts created
+        :param str phrase: the phrase to be changed
 
-    def prompts(self, num_prompts: int, phrase: str) -> list:
-        '''
-        # Generates unique prompts in the format of the given phrase
-        Args: num_prompts; int; Number of prompts that are required including 'phrase' (num_prompts given by max_num_prompts is used if this value is greater than maximum number of possible prompts)
-              phrase; str; The basic prompt that needs to be changed based on options in vocabulary
-
-        Returns: phrase_list; list; A list of unique prompts in the format of given phrase
-        '''
+        :return: all generated new phrases
+        :rtype: list
+        """
 
         phrase_list = []
-        phrase_list.extend([phrase.lower()])
-        num_prompts = min(num_prompts, self.max_num_prompts(phrase))
-        while(len(phrase_list) < num_prompts):
-            new_phrase_list = phrase_list[0].lower().split()
-            for phrase_loc in range(len(new_phrase_list)):
-                for vocabulary_class in self.vocabulary.keys():
-                    if new_phrase_list[phrase_loc] in self.vocabulary[vocabulary_class]:
-                        new_phrase_list[phrase_loc] = random.choice(self.vocabulary[vocabulary_class])
-                        break
-            new_phrase = ' '.join(new_phrase_list)
+        phrase_tokens = phrase.lower().split()
+
+        for _ in range(num_prompts):
+            # For each word in the phrase try to change it with one in the same class.
+            new_phrase = [self._change_token(token) for token in phrase_tokens]
+            new_phrase = ' '.join(new_phrase)
             if new_phrase not in phrase_list:
-                phrase_list.extend([new_phrase])
+                phrase_list.append(new_phrase)
 
         return phrase_list
 
     def max_template_prompts(self) -> int:
-        ''''
+        """'
         # Counts the maximum number of template prompts that can be generated with the exisitng prompt_templates
         Args: None
         Returns: counter; int; maximum number of prompts that can be generated from prompt_templates
-        '''
+        """
 
         counter = 0
         for phrase in self.phrase_templates:
@@ -165,11 +161,11 @@ class Prompt:
         return counter
 
     def template_prompts(self, num_prompts: int) -> list:
-        '''
+        """
         # Generates unique prompts from the template prompts
         Args: num_prompts; int; number of prompts that are required
         Returns: phrases; list; list of prompts
-        '''
+        """
 
         phrases = []
         num_phrases = min(num_prompts, self.max_template_prompts())
@@ -195,4 +191,4 @@ class Prompt:
             if new_phrase[0] not in phrases:
                 phrases.extend(new_phrase)
 
-        return(phrases)
+            return(phrases)

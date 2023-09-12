@@ -16,6 +16,12 @@ def find_model_name(name: str, l: List[Dict[str, str]]) -> Optional[str]:
     return None
 
 
+def read_caption(caption_path: str) -> List[str]:
+    with open(caption_path, 'r') as f:
+        lines = [line.strip() for line in f.readlines()]
+    return lines
+
+
 def draw_landmarks_on_image(rgb_image, detection_result, mode:str = 'default'):
     if mode not in ('default', 'binary'):
         raise Exception(f"Unkown mode: {mode}")
