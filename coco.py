@@ -132,6 +132,7 @@ def main(cfg: DictConfig) -> None:
 
     TEST_NB = cfg['ml']['test_nb']
     VAL_NB = cfg['ml']['val_nb']
+    TRAIN_NB = cfg['ml']['train_nb']
 
     logger.info(f'Moving images to {str(real_data_images)}')
     logger.info(f'Moving captions to {str(real_data_labels)}')
@@ -139,9 +140,16 @@ def main(cfg: DictConfig) -> None:
     logger.info(f'Using values test: {TEST_NB} and validation: {VAL_NB}')
 
     # move all files
+    coco_images = os.listdir(image_path)
+    length = VAL_NB + TEST_NB + TRAIN_NB if (VAL_NB + TEST_NB + TRAIN_NB) < len(coco_images) else coco_images
+    coco_images = coco_images[:length]
+
     counter = 0
-    for file_name in tqdm(os.listdir(image_path), unit='img'):
+    for file_name in tqdm(coco_images, unit='img'):
         counter += 1
+
+        if counter >= VAL_NB + TEST_NB + TRAIN_NB:
+            break
 
         name =  file_name.split('.')[0]
         img_file = name + '.jpg'

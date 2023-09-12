@@ -2,68 +2,77 @@ import os
 import argparse
 import random
 import yaml
-
+from pathlib import Path
 from logger import logger
+import hydra
+from omegaconf import DictConfig
+from typing import List
+import glob
 
-def create_mixte_dataset(real_images_dir: str, syn_images_dir: str, txt_dir: str, per_syn_data: float, n_file: int):
+def create_mixte_dataset(real_images_dir: str, synth_images_dir: str, txt_dir: str, per_synth_data: float, n_file: int = 0, formats: List[str] = ['jpg', 'png', 'jpeg']):
     """
     Construct the txt file containing a percentage of real and synthetic data
     :param real_images_dir: path to the folder containing real images
-    :param syn_images_dir: path to the folder containing synthetic images
+    :param synth_images_dir: path to the folder containing synthetic images
     :param txt_dir: path used to create the txt file
-    :param per_syn_data: float, [0, 1], percentage of synthetic data compared to real ones
+    :param per_synth_data: float, [0, 1], percentage of synthetic data compared to real ones
     :param n_file: int, number of the file used for the txt and yaml names
     :return: /
     """
-    set = 'train'
-    txt_dir_path = os.path.join(txt_dir, set + '.txt')
+    train_txt_path = txt_dir / 'train.txt'
+    val_txt_path = txt_dir / 'val.txt'
+    test_txt_path = txt_dir / 'test.txt'
+    data_yaml_path = txt_dir / 'data.yaml'
 
-    real_images_path = os.path.join(real_images_dir, 'images/')
-    real_images_path = os.path.abspath(real_images_path)
-    real_images = sorted(os.listdir(real_images_path))
-    if real_images and real_images[0] == '.DS_Store': real_images = real_images[1:]
+    real_images_path = real_images_dir / 'images'
+    val_images_path = Path(str(real_images_path.absolute()).replace('/real/', '/val/'))
+    test_images_path = Path(str(real_images_path.absolute()).replace('/real/', '/test/'))
+    
+    real_images = list_images(real_images_path, formats)
+    synth_images = list_images(synth_images_dir, formats)
+    val_images = list_images(val_images_path, formats)
+    test_images = list_images(test_images_path, formats)
+    
+    # shuffle images
     random.Random(42).shuffle(real_images)
+    random.Random(42).shuffle(synth_images)
 
-    nb_real_images = int(len(real_images) * (1 - per_syn_data))
-    nb_syn_images = int(len(real_images) * per_syn_data)
-    aorw = 'w'
-    if per_syn_data != 0:
-        #syn_images_path = os.path.join(syn_images_dir, set, 'images/')
-        syn_images = sorted(os.listdir(syn_images_dir))#syn_images_path))
-        if syn_images and syn_images[0] == '.DS_Store': syn_images = syn_images[1:]
-        random.Random(42).shuffle(syn_images)
-        syn_images = syn_images[:nb_syn_images]
-        with open(txt_dir_path, 'w') as f:
-            for image in syn_images:
-                name = syn_images_dir + str(image) + '\n'
-                f.write(name)
-        aorw = 'a'
+    # nb_real_images = int(len(real_images) * (1 - per_synth_data))
+    nb_synth_images = int(len(real_images) * per_synth_data)
 
-    real_images = real_images[:nb_real_images]
-    with open(txt_dir_path, aorw) as f:
-        for image in real_images:
-            name = str(os.path.join(real_images_path, image)) + '\n'
-            f.write(name)
+    real_images = real_images
+    synth_images = synth_images[:nb_synth_images]
 
-    sets = ['val', 'test']
-    for set in sets:
-        real_images_path = os.path.join(real_images_dir.split('real')[0], set, 'images/')
-        real_images_path = os.path.abspath(real_images_path)
-        real_images = sorted(os.listdir(real_images_path))
-        if real_images and real_images[0] == '.DS_Store': real_images = real_images[1:]
-        random.Random(42).shuffle(real_images)
+    train_images = real_images + synth_images
 
-        txt_dir_path = os.path.join(txt_dir, set  + '.txt')
-        with open(txt_dir_path, 'w') as f:
-            for image in real_images:
-                name = str(os.path.join(real_images_path, image)) + '\n'
-                f.write(name)
-            
-    yaml_dir = os.path.join(os.path.join(txt_dir, 'coco' +'.yaml'))  
-    create_yaml_file(txt_dir, yaml_dir)
+    with open(train_txt_path, 'w') as f:
+        f.write('\n'.join(train_images))
+
+    with open(val_txt_path, 'w') as f:
+        f.write('\n'.join(val_images))
+
+    with open(test_txt_path, 'w') as f:
+        f.write('\n'.join(test_images))
+
+    
+    create_yaml_file(
+        data_yaml_path, 
+        train_txt_path,
+        val_txt_path,
+        test_txt_path
+    )
 
 
-def create_yaml_file(txt_dir, yaml_dir):
+def list_images(images_path: Path, formats: List[str]):
+    images = []
+    for format in formats:
+        images += [
+            *glob.glob(str(images_path.absolute()) + f'/*.{format}')
+        ]
+    return images
+
+
+def create_yaml_file(save_path: Path, train: Path, val: Path, test: Path):
     """
     Construct the yaml file
     :param txt_dir: path used to create the txt files
@@ -72,31 +81,26 @@ def create_yaml_file(txt_dir, yaml_dir):
     :return: /
     """
     yaml_file = {
-                    'path': '',
-                    'train': os.path.abspath(os.path.join(txt_dir, 'train.txt')),
-                    'val': os.path.abspath(os.path.join(txt_dir, 'val.txt')),
-                    'test': os.path.abspath(os.path.join(txt_dir, 'test.txt')),
-                    'names': {0: 'person'}
-                }
-    yaml_file['path'] = os.path.abspath(txt_dir)
-    with open(yaml_dir, 'w') as file:
+        'train': str(train.absolute()),
+        'val': str(val.absolute()),
+        'test': str(test.absolute()),
+        'names': {0: 'person'}
+    }
+    
+    with open(save_path, 'w') as file:
         yaml.dump(yaml_file, file)
 
-def run():
-    parser = argparse.ArgumentParser(description="Create custom train.txt, valid.txt and test.txt.")
-    parser.add_argument("--real_images_dir", type=str,
-                        help="Path to the folder that contains the real images")
-    parser.add_argument("--syn_images_dir", type=str,
-                        help="Path to the folder that contains the synthetic images")
-    parser.add_argument("--txt_dir", type=str,
-                        help='Path used to create the txt file')
-    parser.add_argument("--per_syn_data", type=float,
-                        help='Percentage of synthetic data compared to real ones used for pre-training')
-    parser.add_argument("--n_file", type=int, help='Number of the file')
-    args = parser.parse_args()
-    logger.info(f"Command line arguments: {args}")
 
-    create_mixte_dataset(args.real_images_dir, args.syn_images_dir, args.txt_dir, args.per_syn_data, args.n_file)
+@hydra.main(version_base=None, config_path="conf", config_name="config")
+def main(cfg : DictConfig) -> None:
+    data_path = cfg['data_path']
+    base_path = os.path.join(*data_path['base'])
+    REAL_DATA_PATH = Path(base_path) / data_path['real']
+
+    GEN_DATA_PATH =  Path(base_path) / data_path['generated'] / cfg['model']['cn_use']
+
+    create_mixte_dataset(REAL_DATA_PATH, GEN_DATA_PATH, REAL_DATA_PATH, cfg['ml']['augmentation_percent'])
+
 
 if __name__ == '__main__':
-    run()
+    main()

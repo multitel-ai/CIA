@@ -33,9 +33,10 @@ def main(cfg : DictConfig) -> None:
     images = []
     for format in formats:
         images += [
-            *glob.glob(str(REAL_DATA_PATH.absolute()) + f'/*.{format}')
+            *glob.glob(str(REAL_DATA_PATH.absolute()) + f'/images/*.{format}')
         ]
-    images = [load_image(image_path) for image_path in images]
+    print(images)
+    # images = [load_image(image_path) for image_path in images]
 
     prompt = cfg['prompt']
     if isinstance(prompt['base'], str):
@@ -76,21 +77,27 @@ def main(cfg : DictConfig) -> None:
 
     logger.info(f'Results will be saved to {GEN_DATA_PATH}')
     # Generate from each image several synthetic images following the different prompts.
-    for i, image in enumerate(images):
+    for image_path in images:
         try:
+            image = load_image(image_path)
+            image_name = image_path.split(f'{os.sep}')[-1].split('.')[0]
+
             # Copy the original image to the same directory to ease the quality testing after.
-            image.save(GEN_DATA_PATH / f'b_{i+1}.png')
+            # image.save(GEN_DATA_PATH / f'b_{i}.png')
 
             # Feature extraction, save also the features.
             feature = extractor.extract(image)
-            feature.save(GEN_DATA_PATH / f"f_{i+1}.png")
+
+            # this is feature debugging 
+            # feature.save(GEN_DATA_PATH / f"f_{i+1}.png")
 
             # Generate with stable diffusion
             output = generator.gen(feature, positive_prompt, negative_prompt)
 
             # save images
             for j, img in enumerate(output.images):
-                img.save(GEN_DATA_PATH / f'{i+1}_{j+1}.png')
+                img.save(GEN_DATA_PATH / f'{image_name}_{j + 1}.png')
+
         except Exception as e:
             logger.info('Image {i}: Exception during Extraction/SDCN', e)
 
