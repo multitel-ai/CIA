@@ -6,14 +6,13 @@ from pathlib import Path
 from diffusers.utils import load_image
 import torch
 
+from common import *
 from extractors import *
 from generators import SDCN
-from common import *
-
+from logger import logger
 
 # Do not let torch decide on best algorithm (we know better!)
 torch.backends.cudnn.benchmark=False
-
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
@@ -71,8 +70,9 @@ def main(cfg : DictConfig) -> None:
         cn_extra_settings = cn_extra_settings
     )
     extractor = Extractor(extract_model_from_name(model_data['cn_use']))
+    logger.info(f'Using extractor: {extractor} and generator: {generator}')
 
-    print(f'Results will be saved to {GEN_DATA_PATH}')
+    logger.info(f'Results will be saved to {GEN_DATA_PATH}')
     # Generate from each image several synthetic images following the different prompts.
     for i, image in enumerate(images):
         try:
@@ -90,7 +90,7 @@ def main(cfg : DictConfig) -> None:
             for j, img in enumerate(output.images):
                 img.save(GEN_DATA_PATH / f'{i+1}_{j+1}.png')
         except Exception as e:
-            print('Image {i}: Exception during Extraction/SDCN', e)
+            logger.info('Image {i}: Exception during Extraction/SDCN', e)
 
 
 if __name__ == '__main__':
