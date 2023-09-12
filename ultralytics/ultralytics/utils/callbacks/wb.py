@@ -33,13 +33,13 @@ def _log_plots(plots, step):
 
 def on_pretrain_routine_start(trainer):
     """Initiate and start project if module is present."""
-    wb.run or wb.init(project=trainer.args.project or 'YOLOv8', name=trainer.args.name, config=vars(trainer.args), entity='sdcn-nantes')
+    wb.run or wb.init(project = trainer.args.project or 'YOLOv8', name = trainer.args.name, config = vars(trainer.args), entity = "sdcn-nantes")
     yaml_dir = trainer.args.data
     with open(yaml_dir, 'r') as file:
         yaml_file = yaml.safe_load(file)
-    train_txt_path = os.path.join(yaml_file['path'], yaml_file['train']) #+ 
-    val_txt_path = os.path.join(yaml_file['path'], yaml_file['val']) #  + yaml_file['val']
-    test_txt_path = os.path.join(yaml_file['path'], yaml_file['test']) # + yaml_file['test']
+    train_txt_path = yaml_file['train']#+ 
+    val_txt_path = yaml_file['val'] #  + yaml_file['val']
+    test_txt_path = yaml_file['test'] # + yaml_file['test']
     with open(train_txt_path) as f: train_images = f.readlines()
     with open(val_txt_path) as f: val_images = f.readlines()
     with open(test_txt_path) as f: test_images = f.readlines()

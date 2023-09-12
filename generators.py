@@ -6,7 +6,6 @@ import torch
 
 from logger import logger
 
-
 class SDCN:
     def __init__(self, sd_model: str, control_model: str, seed: int, device='cpu',  cn_extra_settings = {}):
 

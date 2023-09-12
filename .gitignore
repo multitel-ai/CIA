@@ -172,3 +172,4 @@ multirun*
 .vscode*
 wandb*
 *.pt
+sdcn*

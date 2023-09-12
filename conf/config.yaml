@@ -1,11 +1,14 @@
 data_path:
   base: ['bank', 'data']  # this way it can be used also in DOS systems
-  real: 'real'
+  real: 'real' # should contains images/, labels/, and captions/ (captions are optional)
   generated: 'generated'
   datasets: 'datasets'
 ml:  # put everything related to machine learning here: dataset size, ratio between train and test, learning rate ...
   val_nb: 300
   test_nb: 300
+  train_nb: 5000
+  augmentation_percent: 0.1
+  epochs: 300
 image_formats: ['jpeg', 'jpg']
 prompt:
   base: ["Sandra Oh", "Kim Kardashian", "rihanna ", "taylor swift"]
@@ -23,8 +26,9 @@ prompt:
   ]
   negative_simple: "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion, disfigured, mutation, deformed mouth, deformed eyes, unnatural teeth, unnatural eyes, unnatural mouth, unnatural face, unnatural face expression, not human"
 model:
+  augmentation_percent: 0
   sd: runwayml/stable-diffusion-v1-5
-  cn_use: lllyasviel_canny
+  cn_use: frankjoshua_openpose
   cn:
     # Canny
     - lllyasviel_canny: lllyasviel/sd-controlnet-canny
