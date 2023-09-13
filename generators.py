@@ -56,7 +56,7 @@ class SDCN:
         )
 
         # Move the whole pipe to the designed device to avoid malformed cuda/cpu instructions
-        # self.pipe.to(device)
+        self.pipe.to(device)
 
         # The line below is explained in https://huggingface.co/blog/controlnet but sometimes
         # it will throw an error later in the pipeline about having or not instructions for half
