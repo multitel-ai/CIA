@@ -99,8 +99,20 @@ This are of course in the `config.yaml` file and can be changed statically or dy
 
 ## Create YOLO Dataset and Train :
 
+We use wandb to track and visualize trainings.
+
+```
+wandb login
+```
+
+Create `train.txt`, `val.txt`, et `test.txt` :
+
 ```
 ./run create_dataset
+```
 
+Launch the training !
+
+```
 ./run train.py
 ```
