@@ -1,17 +1,28 @@
 import numpy as np
-from typing import List
 import random
-from hydra import compose
-
-from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
 import torch
 
-from logger import logger
+from diffusers import (
+    StableDiffusionControlNetPipeline,
+    ControlNetModel,
+    UniPCMultistepScheduler)
+from hydra import compose
+from typing import List
+
+from common import logger
+
 
 class SDCN:
-    def __init__(self, sd_model: str, control_model: str, seed: int, device='cpu',  cn_extra_settings = {}):
+    def __init__(self,
+                 sd_model: str,
+                 control_model: str,
+                 seed: int,
+                 device='cpu',
+                 cn_extra_settings = {}):
 
-        logger.info(f'Initializing SDCN with {sd_model} and {control_model}, seed ={seed}, device={device}')
+        logger.info(
+            f'Initializing SDCN with {sd_model} and {control_model}, seed ={seed}, device={device}'
+        )
 
         self.seed = seed
         self.device = device
@@ -51,7 +62,10 @@ class SDCN:
             lower_order_final=True,
             disable_corrector=[],
             solver_p=None,
-            # The arguments below are listed in the documentation but are not part of the current source code
+
+            # The arguments below are listed in the documentation but are not part of the
+            # current source code:
+
             # use_karras_sigmas=False,
             # timestep_spacing="linspace",
             # steps_offset=0,
@@ -77,7 +91,8 @@ class SDCN:
             guidance_scale: float = 7.0,
         ):
         generator = [
-            torch.Generator(device=self.device).manual_seed(self.seed) for i in range(len(positive_prompts))
+            torch.Generator(device=self.device).manual_seed(self.seed)
+            for i in range(len(positive_prompts))
         ]
 
         output = self.pipe(
@@ -137,10 +152,12 @@ class PromptGenerator:
         return phrase_list
 
     def max_template_prompts(self) -> int:
-        """'
-        # Counts the maximum number of template prompts that can be generated with the exisitng prompt_templates
-        Args: None
-        Returns: counter; int; maximum number of prompts that can be generated from prompt_templates
+        """
+        Counts the maximum number of template prompts that can be generated
+        with the exisitng prompt_templates
+
+        :return: maximum number of prompts that can be generated from prompt_templates
+        :rtype: int
         """
 
         counter = 0
@@ -174,15 +191,16 @@ class PromptGenerator:
             phrase = random.choice(self.prompt_templates)
             color_count = phrase.count('opt_color')
             new_phrase = [phrase
-                          .replace('opt_gender',random.choice(self.vocabulary['gender']))
-                          .replace('opt_age',random.choice(self.vocabulary['age']))
-                          .replace('opt_size',random.choice(self.vocabulary['size']))
-                          .replace('opt_height',random.choice(self.vocabulary['height']))
-                          .replace('opt_clothes_top',random.choice(self.vocabulary['clothes_top']))
-                          .replace('opt_clothes_bottom',random.choice(self.vocabulary['clothes_bottom']))
-                          .replace('opt_accessories',random.choice(self.vocabulary['accessories']))
-                          .replace('opt_ground',random.choice(self.vocabulary['ground']))
-                          .replace('opt_background',random.choice(self.vocabulary['background']))]
+                          .replace('opt_gender', random.choice(self.vocabulary['gender']))
+                          .replace('opt_age', random.choice(self.vocabulary['age']))
+                          .replace('opt_size', random.choice(self.vocabulary['size']))
+                          .replace('opt_height', random.choice(self.vocabulary['height']))
+                          .replace('opt_clothes_top', random.choice(self.vocabulary['clothes_top']))
+                          .replace('opt_clothes_bottom',
+                                   random.choice(self.vocabulary['clothes_bottom']))
+                          .replace('opt_accessories', random.choice(self.vocabulary['accessories']))
+                          .replace('opt_ground', random.choice(self.vocabulary['ground']))
+                          .replace('opt_background', random.choice(self.vocabulary['background']))]
 
             for c in range(color_count+1):
                 new_phrase = [new_phrase[0]

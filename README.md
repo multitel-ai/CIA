@@ -1,20 +1,23 @@
 # Data Augmentation with Stable Diffusion for Object Detection using YOLOv8
 
-This is a data generation framework that uses stable diffusion with ControlNet. Models can be trained using a mix of real and generated data. They can also be logged and evaluated.
+This is a data generation framework that uses [Stable Diffusion](https://huggingface.co/blog/stable_diffusion)
+with [ControlNet](https://huggingface.co/blog/train-your-controlnet).
+Models can be trained using a mix of real and generated data. They can also be logged and evaluated.
+
 
 <img src="docs/images/general_pipeline.png" />
 
 Make sure to install the requirements :
 
 ```
-pip install -r requirements
+pip install -r requirements.txt
 ```
 
-We recommend using a virtual environment ;)
+We recommend using a virtual environment.
 
 ## Datasets
 
-We experimented with PEOPLE from the COCO datasets :
+We experimented with PEOPLE from the [COCO](https://cocodataset.org/#home) datasets :
 
 ```
 ./run.sh coco
@@ -38,7 +41,7 @@ You can also configure directly on the command line :
 ./run.sh gen model.cn_use=openpose prompt.base="Trump" prompt.modifier="dancing" data_path.generated=mysupertest
 ```
 
-You will find your images in `bank/data/mysupertest/openpose` along with the base image and the feature extracted.
+You will find your images in `data/mysupertest/openpose` along with the base image and the feature extracted.
 
 <div><img width="350" src="docs/images/b_1.png"/></div>
 <div><img width="350" src="docs/images/f_1.png"/></div>
@@ -114,5 +117,5 @@ Create `train.txt`, `val.txt`, et `test.txt` :
 Launch the training !
 
 ```
-./run train.py
+./run train
 ```
