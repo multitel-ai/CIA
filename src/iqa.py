@@ -1,16 +1,16 @@
 import hydra
 import matplotlib.pyplot as plt
-from omegaconf import DictConfig
 import os
-from pathlib import Path
 import re
-from typing import List, Optional, Tuple
-from tqdm import tqdm
 
+from omegaconf import DictConfig
+from pathlib import Path
 from pyiqa import create_metric
 from pyiqa.models.inference_model import InferenceModel
+from tqdm import tqdm
+from typing import List, Optional, Tuple
 
-from logger import logger
+from common import logger
 
 
 # In this file the approach to measure quality will be the extensive library
@@ -44,7 +44,7 @@ def normalize(metric, scores, avg_score):
     if metric == 'brisque':
         return scores, avg_score
     elif metric == 'clipiqa' or ('clipiqa' in metric):
-        return [score * 100 for score in scores], avg_score * 100
+        return [(1 - score)*100 for score in scores], avg_score * 100
     return scores, avg_score
 
 
@@ -124,7 +124,9 @@ def main(cfg : DictConfig) -> None:
         plt.plot(image_names, scores, label = f'Avg score of {metric_name}: {avg_score}')
     global_avg_score = global_avg_score / len(metrics)
 
-    plt.title(f'Dataset: {os.path.basename(str(GEN_DATA_PATH))}\nGlobal avg score: {global_avg_score}', loc='left')
+    plt.title(f'Dataset: {os.path.basename(
+        str(GEN_DATA_PATH))}\nGlobal avg score: {global_avg_score}',
+        loc='left')
     plt.legend()
     plt.show()
 

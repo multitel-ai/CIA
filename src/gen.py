@@ -1,39 +1,39 @@
 import glob
 import hydra
-from omegaconf import DictConfig
 import os
 import random
-from pathlib import Path
+import torch
 
 from diffusers.utils import load_image
-import torch
+from omegaconf import DictConfig
+from pathlib import Path
 
 from common import *
 from extractors import *
 from generators import SDCN, PromptGenerator
-from logger import logger
+
 
 # Do not let torch decide on best algorithm (we know better!)
 torch.backends.cudnn.benchmark=False
 
 
-@hydra.main(version_base=None, config_path="conf", config_name="config")
+@hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg : DictConfig) -> None:
-    data_path = cfg['data_path']
-    base_path = os.path.join(*data_path['base'])
-    REAL_DATA_PATH = Path(base_path) / data_path['real']
+    data = cfg['data']
+    base_path = os.path.join(*data['base'])
+    REAL_data = Path(base_path) / data['real']
 
-    real_images_path = REAL_DATA_PATH / 'images'
-    real_captions_path = REAL_DATA_PATH / 'captions'
-    real_labels_path = REAL_DATA_PATH / 'labels'
+    real_images_path = REAL_data / 'images'
+    real_captions_path = REAL_data / 'captions'
+    real_labels_path = REAL_data / 'labels'
 
     # Keep track of what feature was used for generation too in the name.
-    GEN_DATA_PATH =  Path(base_path) / data_path['generated'] / cfg['model']['cn_use']
+    GEN_data =  Path(base_path) / data['generated'] / cfg['model']['cn_use']
 
     # Create the generated directory if necessary.
-    (GEN_DATA_PATH).mkdir(parents=True, exist_ok=True)
+    (GEN_data).mkdir(parents=True, exist_ok=True)
 
-    formats = cfg['image_formats']
+    formats = data['image_formats']
     real_images = []
     for format in formats:
         real_images += [
@@ -85,7 +85,9 @@ def main(cfg : DictConfig) -> None:
         real_labels_path = []
 
     cn_model = find_model_name(model_data['cn_use'], model_data['cn'])
-    cn_model = cn_model if cn_model is not None else 'fusing/stable-diffusion-v1-5-controlnet-openpose'
+    cn_model = (cn_model
+                if cn_model is not None
+                else 'fusing/stable-diffusion-v1-5-controlnet-openpose')
 
     seed = model_data['seed']
     device = model_data['device']
@@ -105,7 +107,7 @@ def main(cfg : DictConfig) -> None:
     extractor = Extractor(extract_model_from_name(model_data['cn_use']))
     logger.info(f'Using extractor: {extractor} and generator: {generator}')
 
-    logger.info(f'Results will be saved to {GEN_DATA_PATH}')
+    logger.info(f'Results will be saved to {GEN_data}')
     # Generate from each image several synthetic images following the different prompts.
 
     for idx in range(real_dataset_size):
@@ -119,13 +121,13 @@ def main(cfg : DictConfig) -> None:
             image_name = image_path.split(f'{os.sep}')[-1].split('.')[0]
 
             # Copy the original image to the same directory to ease the quality testing after.
-            # image.save(GEN_DATA_PATH / f'b_{i}.png')
+            # image.save(GEN_data / f'b_{i}.png')
 
             # Feature extraction, save also the features.
             feature = extractor.extract(image)
 
             # this is feature debugging
-            # feature.save(GEN_DATA_PATH / f"f_{i+1}.png")
+            # feature.save(GEN_data / f"f_{i+1}.png")
 
             # Here we use captions if necessary and modify them if necessary.
             if use_captions:
@@ -137,7 +139,8 @@ def main(cfg : DictConfig) -> None:
                         modified_list = promp_generator.prompts(prompt_generation_size, p)
                         cleaned_list = list(filter(lambda new_p: new_p != p , modified_list))
                         if not cleaned_list:
-                            logger.info(f"No new prompt created for caption \"{p}\", using the same.")
+                            logger.info(
+                                f"No new prompt created for caption \"{p}\", using the same.")
                             return p
                         return random.choice(cleaned_list)
 
@@ -148,7 +151,7 @@ def main(cfg : DictConfig) -> None:
 
             # save images
             for j, img in enumerate(output.images):
-                img.save(GEN_DATA_PATH / f'{image_name}_{j + 1}.png')
+                img.save(GEN_data / f'{image_name}_{j + 1}.png')
 
         except Exception as e:
             logger.info(f'Image {image_path}: Exception during Extraction/SDCN', e)

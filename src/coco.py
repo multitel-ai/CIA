@@ -10,7 +10,7 @@ from pathlib import Path
 from pycocotools.coco import COCO
 from tqdm import tqdm
 
-from logger import logger
+from common import logger
 
 
 def cocobox2yolo(img_path, coco_box):
@@ -62,7 +62,8 @@ def download_coco(data_path: Path,
             zip_ref.extractall(str(data_path))
 
     if not os.path.exists(path_to_annotations_zip):
-        logger.info(f'Downloading zip annotations from {annotations_url} to {path_to_annotations_zip}')
+        logger.info(
+            f'Downloading zip annotations from {annotations_url} to {path_to_annotations_zip}')
         wget.download(annotations_url, out=str(path_to_annotations_zip))
     if not len(os.listdir(annotations_path)):
         logger.info(f'Extracting zip annotations to {annotations_path}')
@@ -71,13 +72,13 @@ def download_coco(data_path: Path,
 
     return image_path, annotations_path, bbx_path, caps_path
 
-@hydra.main(version_base=None, config_path="conf", config_name="config")
+@hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg: DictConfig) -> None:
 
     # Get all paths
-    data_path = cfg['data_path']
-    base_path = os.path.join(*data_path['base'])
-    REAL_DATA_PATH = Path(base_path) / data_path['real']
+    data = cfg['data']
+    base_path = Path(data['base'])
+    REAL_DATA_PATH = Path(base_path) / data['real']
     COCO_PATH = REAL_DATA_PATH / 'coco'
 
     REAL_DATA_PATH.mkdir(parents=True, exist_ok=True)
@@ -102,14 +103,18 @@ def main(cfg: DictConfig) -> None:
     for img_path in tqdm(all_images, unit='img'):
         img_path = str(img_path.absolute())
         img_id = int(img_path.split('/')[-1].split('.jpg')[0])
-        Keypoints_annIds = coco_keypoints.getAnnIds(imgIds = img_id, catIds = catIds, iscrowd = None)
+
+        Keypoints_annIds = coco_keypoints.getAnnIds(
+            imgIds = img_id, catIds = catIds, iscrowd = None)
         Keypoints_anns = coco_keypoints.loadAnns(Keypoints_annIds)
 
         caps_annIds = coco_captions.getAnnIds(imgIds = img_id)
         caps_anns = coco_captions.loadAnns(caps_annIds)
 
-        bbox_text_path = img_path.replace('.jpg', '.txt').replace('Coco_1FullPerson','Coco_1FullPerson_bbx')
-        captions_text_path = img_path.replace('.jpg', '.txt').replace('Coco_1FullPerson','Coco_1FullPerson_caps')
+        bbox_text_path = img_path.replace('.jpg', '.txt').replace(
+            'Coco_1FullPerson','Coco_1FullPerson_bbx')
+        captions_text_path = img_path.replace('.jpg', '.txt').replace(
+            'Coco_1FullPerson','Coco_1FullPerson_caps')
 
         with open(bbox_text_path, 'w') as file:
             coco_box = Keypoints_anns[0]['bbox']
@@ -141,7 +146,9 @@ def main(cfg: DictConfig) -> None:
 
     # move all files
     coco_images = os.listdir(image_path)
-    length = VAL_NB + TEST_NB + TRAIN_NB if (VAL_NB + TEST_NB + TRAIN_NB) < len(coco_images) else coco_images
+    length = (VAL_NB + TEST_NB + TRAIN_NB
+              if (VAL_NB + TEST_NB + TRAIN_NB) < len(coco_images)
+              else coco_images)
     coco_images = coco_images[:length]
 
     counter = 0
