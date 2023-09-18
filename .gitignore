@@ -7,6 +7,11 @@ __pycache__/
 # C extensions
 *.so
 
+# My git utilities
+gacan.sh
+gpfwl.sh
+TODO.md
+
 # Distribution / packaging
 .Python
 build/
@@ -166,7 +171,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-bank*
+data*
 datasets*
 multirun*
 .vscode*

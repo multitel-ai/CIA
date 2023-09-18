@@ -1,16 +1,14 @@
 import cv2
 import numpy as np
-from PIL import Image
-from typing import Tuple
-
-from controlnet_aux import OpenposeDetector
-
-# Mediapipe
-import mediapipe as mp
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
 
 from common import draw_landmarks_on_image
+from controlnet_aux import OpenposeDetector
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+from mediapipe import Image as MpImage
+from mediapipe import ImageFormat
+from PIL import Image
+from typing import Tuple
 
 
 AVAILABLE_EXTRACTORS = ('openpose', 'canny', 'mediapipe_face')
@@ -41,7 +39,11 @@ class Extractor:
 
 
 class Canny:
-    def __init__(self, auto_threshold: bool = False, low_threshold: int = 100, high_threshold: int = 200, **kwargs):
+    def __init__(self,
+                 auto_threshold: bool = False,
+                 low_threshold: int = 100,
+                 high_threshold: int = 200,
+                 **kwargs):
         self.auto_threshold = auto_threshold
         self.low_threshold = low_threshold
         self.high_threshold = high_threshold
@@ -98,7 +100,10 @@ class OpenPose:
 
 
 class MediaPipeFace:
-    def __init__(self, model: str = 'ressources/mediapipe/face_landmarker_v2_with_blendshapes.task', **kwargs):
+    def __init__(self,
+                 # put this in the config.yaml file !
+                 model: str = '../ressources/mediapipe/face_landmarker_v2_with_blendshapes.task',
+                 **kwargs):
         self.base_options = python.BaseOptions(model_asset_path = model)
         self.options = vision.FaceLandmarkerOptions(base_options = self.base_options,
                                             output_face_blendshapes = True,
@@ -108,7 +113,7 @@ class MediaPipeFace:
 
     def extract(self, image: Image) -> Image:
         image = np.array(image)
-        image_mp = mp.Image(image_format = mp.ImageFormat.SRGB, data = image)
+        image_mp = MpImage(image_format = ImageFormat.SRGB, data = image)
         detection_result = self.detector.detect(image_mp)
 
         annotated_image = draw_landmarks_on_image(image, detection_result)

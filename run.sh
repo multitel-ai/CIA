@@ -1,3 +1,13 @@
 #!/usr/bin/bash
 
-python3 "$1.py" ${@:2}
+# Current possibilities:
+#   - gen for generation
+#   - coco for downloading and preparing coco
+#   - iqa for measuring the quality of generated images
+#   - train
+
+if [[ $1 == "gen" || ($1 == "coco" || ($1 == "iqa" || $1 == "train")) ]]; then
+    python3 "src/$1.py" ${@:2}
+else
+    echo "Unrecognized utility $1"
+fi

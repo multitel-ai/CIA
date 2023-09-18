@@ -1,12 +1,18 @@
 import cv2
-import numpy as np
+import logging
 import matplotlib.pyplot as plt
 import mediapipe as mp
+import numpy as np
+
 from mediapipe.framework.formats import landmark_pb2
 from mediapipe import solutions
 from PIL import Image
-
 from typing import Dict, List, Optional
+
+
+FORMAT = '%(asctime)s %(clientip)-16s %(user)-8s %(message)s'
+logging.basicConfig(format=FORMAT)
+logger = logging.getLogger()
 
 
 def find_model_name(name: str, l: List[Dict[str, str]]) -> Optional[str]:
@@ -14,6 +20,12 @@ def find_model_name(name: str, l: List[Dict[str, str]]) -> Optional[str]:
         if name in small_dict:
             return small_dict[name]
     return None
+
+
+def read_caption(caption_path: str) -> List[str]:
+    with open(caption_path, 'r') as f:
+        lines = [line.strip() for line in f.readlines()]
+    return lines
 
 
 def draw_landmarks_on_image(rgb_image, detection_result, mode:str = 'default'):
@@ -30,7 +42,8 @@ def draw_landmarks_on_image(rgb_image, detection_result, mode:str = 'default'):
         # Draw the face landmarks.
         face_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
         face_landmarks_proto.landmark.extend([
-            landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z) for landmark in face_landmarks
+            landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z)
+            for landmark in face_landmarks
         ])
 
         solutions.drawing_utils.draw_landmarks(
@@ -86,8 +99,7 @@ def plot_face_blendshapes_bar_graph(face_blendshapes):
 
 
 def normalizer(image: Image) -> Image:
-    """
-        normalize an image pixel values between [0 - 255]
-    """
+    """Normalize an image pixel values between [0 - 255]"""
+
     img = np.array(image)
     return cv2.normalize(img,  img, 0, 255, cv2.NORM_MINMAX)
