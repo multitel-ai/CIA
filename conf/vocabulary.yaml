@@ -1,0 +1,22 @@
+comment:
+  vocabulary: "You can add the vocabulary classes (variables to be used in the prompt) as keys and its possible values in the form of a list"
+  prompt_templates: "Each template (with variables as in vocabulary keys) should be an element in the list. The variables in the templates should start with 'opt_<vocabulary key>'. In case of colors it should be 'opt_color<number>', where number is the color number of that template (opt_color1, opt_color2,..) if you possibly want a different color for each color number. Make sure that the color numbers are in increasing numerical order."
+vocabulary:
+    gender: ["man","women","boy","girl", kid, person]
+    age: ["infant","toddler","child","young","middle aged","old"]
+    color: ["red","green","blue","white","cyan","magenta","yellow","black"]
+    size: ["big","small"]
+    height: ["short","tall"]
+    clothes_top: ["shirt","tshirt","hoody","jacket", top]
+    clothes_bottom: ["pant", "trouser", shorts]
+    accessories: ["hat","glasses","shoes","watch"]
+    ground: ["sand","grass","snow"]
+    background: ["forest","tree","stadium","river","sea","door","light","graffiti"]
+    vehicule: [bike, motor, skies, car, bus, cycle, bicycle]
+    environment: [woods, forest, mountain, grassland, see, beach, city, town]
+prompt_templates: [
+    "a opt_gender in a opt_color1 opt_clothes_top wearing opt_color2 opt_accessories",
+    "a opt_gender in a opt_color1 opt_clothes_bottom with opt_background in the background",
+    "a opt_gender standing on opt_ground with opt_background in the background",
+    "a opt_gender in a opt_color1 opt_clothes_top and opt_color2 opt_clothes_bottom wearing a opt_color3 opt_accessories with opt_background in the background"
+]

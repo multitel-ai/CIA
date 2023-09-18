@@ -1,16 +1,23 @@
-data_path:
-  base: ['bank', 'data']  # this way it can be used also in DOS systems
+data:
+  base: 'data'
   real: 'real' # should contains images/, labels/, and captions/ (captions are optional)
   generated: 'generated'
   datasets: 'datasets'
-ml:  # put everything related to machine learning here: dataset size, ratio between train and test, learning rate ...
+  image_formats: ['jpeg', 'jpg']
+
+# put every parameter related to machine learning here: dataset size,
+# ratio between train and test, learning rate ...
+ml:
   val_nb: 300
   test_nb: 300
   train_nb: 5000
   augmentation_percent: 0.1
   epochs: 300
-image_formats: ['jpeg', 'jpg']
+
 prompt:
+  template: vocabulary
+  modify_captions: 1
+  generation_size: 10
   base: ["Sandra Oh", "Kim Kardashian", "rihanna ", "taylor swift"]
   quality: "showing emotion, great realistic face, best quality, extremely detailed,"
   modifier: "Happy man smiling"
@@ -25,7 +32,10 @@ prompt:
     "drawing, art, sketch, anime, deformation, distorsion"
   ]
   negative_simple: "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion, disfigured, mutation, deformed mouth, deformed eyes, unnatural teeth, unnatural eyes, unnatural mouth, unnatural face, unnatural face expression, not human"
+
 model:
+  use_captions: 1
+  use_labels: 0
   augmentation_percent: 0
   sd: runwayml/stable-diffusion-v1-5
   cn_use: frankjoshua_openpose
@@ -55,6 +65,7 @@ model:
       subfolder: diffusion_sd15
   seed: 34567
   device: cuda
+
 iqa:
   device: cuda
   metrics: ['brisque', 'clipiqa+', 'dbcnn', 'ilniqe', 'niqe', nima]
