@@ -20,7 +20,7 @@ torch.backends.cudnn.benchmark=False
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg : DictConfig) -> None:
     data = cfg['data']
-    base_path = os.path.join(*data['base'])
+    base_path = os.path.join(*data['base']) if isinstance(data['base'], list) else data['base']
     REAL_data = Path(base_path) / data['real']
 
     real_images_path = REAL_data / 'images'
@@ -147,6 +147,8 @@ def main(cfg : DictConfig) -> None:
                     positive_prompt = [modify_prompt(p) for p in positive_prompt]
 
             # Generate with stable diffusion
+            # Clean a little the gpu memory between generations
+            torch.cuda.empty_cache()
             output = generator.gen(feature, positive_prompt, negative_prompt)
 
             # save images

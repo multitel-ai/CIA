@@ -3,6 +3,7 @@ import logging
 import matplotlib.pyplot as plt
 import mediapipe as mp
 import numpy as np
+import os
 
 from mediapipe.framework.formats import landmark_pb2
 from mediapipe import solutions
@@ -26,6 +27,15 @@ def read_caption(caption_path: str) -> List[str]:
     with open(caption_path, 'r') as f:
         lines = [line.strip() for line in f.readlines()]
     return lines
+
+
+def find_common_prefix(str_list: List[str]):
+    return os.path.commonprefix(str_list)
+
+
+def find_common_suffix(str_list: List[str]):
+    str_list_inv = [x[::-1] for x in str_list]
+    return find_common_prefix(str_list_inv)
 
 
 def draw_landmarks_on_image(rgb_image, detection_result, mode:str = 'default'):

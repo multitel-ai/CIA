@@ -38,8 +38,10 @@ model:
   use_labels: 0
   augmentation_percent: 0
   sd: runwayml/stable-diffusion-v1-5
-  cn_use: frankjoshua_openpose
+  cn_use: controlnet_segmentation
   cn:
+    # Segmentation
+    - controlnet_segmentation: lllyasviel/sd-controlnet-seg
     # Canny
     - lllyasviel_canny: lllyasviel/sd-controlnet-canny
     - lllyasviel_scribble_canny: lllyasviel/sd-controlnet-scribble

@@ -8,10 +8,12 @@ from mediapipe.tasks.python import vision
 from mediapipe import Image as MpImage
 from mediapipe import ImageFormat
 from PIL import Image
+from torchvision.transforms import ToPILImage
 from typing import Tuple
+from ultralytics import YOLO
 
 
-AVAILABLE_EXTRACTORS = ('openpose', 'canny', 'mediapipe_face')
+AVAILABLE_EXTRACTORS = ('openpose', 'canny', 'mediapipe_face', 'segmentation')
 
 
 def extract_model_from_name(raw_name: str) -> str:
@@ -21,6 +23,8 @@ def extract_model_from_name(raw_name: str) -> str:
         return 'canny'
     elif 'mediapipe' in raw_name:
         return 'mediapipe_face'
+    elif 'segmentation' in raw_name:
+        return 'segmentation'
     else:
         raise Exception(f'Unkown model: {raw_name}')
 
@@ -36,6 +40,22 @@ class Extractor:
             return Canny(**kwargs)
         elif 'mediapipe_face' in control_model:
             return MediaPipeFace(**kwargs)
+        elif 'segmentation' in control_model:
+            return Segmentation(**kwargs)
+
+
+class Segmentation:
+    def __init__(self, **kwargs):
+        self.model = YOLO("yolov8m-seg.pt")
+
+    def extract(self, image: Image) -> Image:
+        image = np.array(image)
+
+        results = self.model.predict(image)
+        result = results[0].masks[0].data[0]
+        seg_image = ToPILImage()(result[None, :])
+
+        return seg_image
 
 
 class Canny:
