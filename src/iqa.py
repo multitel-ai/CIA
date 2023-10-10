@@ -10,7 +10,7 @@ from pyiqa.models.inference_model import InferenceModel
 from tqdm import tqdm
 from typing import List, Optional, Tuple
 
-from common import logger
+from common import logger, find_common_prefix, find_common_suffix
 
 
 # In this file the approach to measure quality will be the extensive library
@@ -40,12 +40,22 @@ from common import logger
 # Note that all score measure do not have the same range. Before plotting we
 # normalize.
 # Methods with an infinite range are of course not normalized.
-def normalize(metric, scores, avg_score):
+def adapt_metric(metric, scores, avg_score):
     if metric == 'brisque':
         return scores, avg_score
     elif metric == 'clipiqa' or ('clipiqa' in metric):
         return [(1 - score)*100 for score in scores], avg_score * 100
     return scores, avg_score
+
+
+def normalize(values):
+    min_value = min(values)
+    values = [x - min_value for x in values]
+
+    max_value = max(values)
+    values = [x / max_value for x in values]
+
+    return values, (sum(values) / len(values))
 
 
 def measure_several_images(metric: InferenceModel,
@@ -79,12 +89,12 @@ def is_generated_image(image_path: str) -> bool:
     return re.match(regex, image_wo_path)
 
 
-@hydra.main(version_base=None, config_path="conf", config_name="config")
+@hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg : DictConfig) -> None:
     # BASE PATHS, please used these when specifying paths
-    data_path = cfg['data_path']
+    data_path = cfg['data']
     # keep track of what feature was used for generation too in the name
-    base_path = os.path.join(*data_path['base'])
+    base_path = os.path.join(*data_path['base']) if isinstance(data_path['base'], list) else data_path['base']
     GEN_DATA_PATH =  Path(base_path) / data_path['generated'] / cfg['model']['cn_use']
 
     logger.info(f'Reading images from {GEN_DATA_PATH}')
@@ -94,7 +104,10 @@ def main(cfg : DictConfig) -> None:
         for image_path in os.listdir(str(GEN_DATA_PATH)) if is_generated_image(image_path)
     ]
     image_paths.sort()
-    image_names = [os.path.basename(image_path)[:4] for image_path in image_paths]
+
+    prefix_len = len(find_common_prefix(image_paths))
+    suffix_len = len(find_common_suffix(image_paths))
+    image_names = [image_path[prefix_len:-suffix_len] for image_path in image_paths]
 
    # We are hard-coding the No-Reference methods for the moment.
    # See reasonment above.
@@ -113,7 +126,9 @@ def main(cfg : DictConfig) -> None:
 
         iqa_model = create_metric(metric_name, device=device, metric_mode=METRIC_MODE)
         scores, avg_score = measure_several_images(iqa_model, image_paths)
-        scores, avg_score = normalize(metric_name, scores, avg_score)
+        scores, avg_score = adapt_metric(metric_name, scores, avg_score)
+
+        scores, avg_score = normalize(scores)
 
         overall_scores[metric_name] = scores, avg_score
 
@@ -124,9 +139,7 @@ def main(cfg : DictConfig) -> None:
         plt.plot(image_names, scores, label = f'Avg score of {metric_name}: {avg_score}')
     global_avg_score = global_avg_score / len(metrics)
 
-    plt.title(f'Dataset: {os.path.basename(
-        str(GEN_DATA_PATH))}\nGlobal avg score: {global_avg_score}',
-        loc='left')
+    plt.title(f'Dataset: {os.path.basename(str(GEN_DATA_PATH))}\nGlobal avg score: {global_avg_score}',loc='left')
     plt.legend()
     plt.show()
 
