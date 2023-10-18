@@ -14,8 +14,7 @@ from generators import SDCN, PromptGenerator
 
 
 # Do not let torch decide on best algorithm (we know better!)
-torch.backends.cudnn.benchmark=False
-
+torch.backends.cudnn.benchmark=False 
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg : DictConfig) -> None:

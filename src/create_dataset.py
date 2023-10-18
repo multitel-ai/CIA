@@ -8,7 +8,6 @@ from omegaconf import DictConfig
 from pathlib import Path
 from typing import List
 
-
 def create_mixte_dataset(real_images_dir: str,
                          synth_images_dir: str,
                          txt_dir: str,
@@ -35,7 +34,7 @@ def create_mixte_dataset(real_images_dir: str,
     val_images_path = Path(str(real_images_path.absolute()).replace('/real/', '/val/'))
     test_images_path = Path(str(real_images_path.absolute()).replace('/real/', '/test/'))
 
-    real_images = list_images(real_images_path, formats)
+    real_images = list_images(real_images_path, formats, 250)
     synth_images = list_images(synth_images_dir, formats)
     val_images = list_images(val_images_path, formats)
     test_images = list_images(test_images_path, formats)
@@ -64,14 +63,16 @@ def create_mixte_dataset(real_images_dir: str,
     create_yaml_file(data_yaml_path, train_txt_path, val_txt_path, test_txt_path)
 
 
-def list_images(images_path: Path, formats: List[str]):
+def list_images(images_path: Path, formats: List[str], max_ = None):
     images = []
     for format in formats:
         images += [
             *glob.glob(str(images_path.absolute()) + f'/*.{format}')
         ]
-    return images
-
+    if max_ is None:
+        return images
+    else:
+        return images[:250]
 
 def create_yaml_file(save_path: Path, train: Path, val: Path, test: Path):
     """
@@ -99,11 +100,20 @@ def create_yaml_file(save_path: Path, train: Path, val: Path, test: Path):
 def main(cfg : DictConfig) -> None:
     data = cfg['data']
     base_path = Path(data['base'])
-    REAL_DATA_PATH = Path(base_path) / data['real']
     GEN_DATA_PATH =  Path(base_path) / data['generated'] / cfg['model']['cn_use']
+    REAL_DATA_PATH = Path(base_path) / data['real'] 
+    
+    if cfg['ml']['augmentation_percent']==0:  
+        fold = REAL_DATA_PATH
+    else:
+        fold = cfg['model']['cn_use'] + str(cfg['ml']['augmentation_percent']) 
+        fold = REAL_DATA_PATH / fold
+        
+    if not os.path.isdir(fold): 
+        os.makedirs(fold)
 
     create_mixte_dataset(
-        REAL_DATA_PATH, GEN_DATA_PATH, REAL_DATA_PATH, cfg['ml']['augmentation_percent']
+        REAL_DATA_PATH, GEN_DATA_PATH, fold, cfg['ml']['augmentation_percent']
     )
 
 

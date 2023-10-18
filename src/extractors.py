@@ -10,6 +10,11 @@ from mediapipe import ImageFormat
 from PIL import Image
 from torchvision.transforms import ToPILImage
 from typing import Tuple
+
+import sys 
+import os
+
+sys.path.append(os.path.join(os.getcwd(), "ultralytics"))
 from ultralytics import YOLO
 
 
@@ -122,7 +127,7 @@ class OpenPose:
 class MediaPipeFace:
     def __init__(self,
                  # put this in the config.yaml file !
-                 model: str = '../ressources/mediapipe/face_landmarker_v2_with_blendshapes.task',
+                 model: str = '../nsw-da-object-detection/ressources/mediapipe/face_landmarker_v2_with_blendshapes.task',
                  **kwargs):
         self.base_options = python.BaseOptions(model_asset_path = model)
         self.options = vision.FaceLandmarkerOptions(base_options = self.base_options,

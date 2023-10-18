@@ -11,6 +11,8 @@ from tqdm import tqdm
 from typing import List, Optional, Tuple
 
 from common import logger, find_common_prefix, find_common_suffix
+import numpy
+import seaborn as sns
 
 
 # In this file the approach to measure quality will be the extensive library
@@ -96,6 +98,7 @@ def main(cfg : DictConfig) -> None:
     # keep track of what feature was used for generation too in the name
     base_path = os.path.join(*data_path['base']) if isinstance(data_path['base'], list) else data_path['base']
     GEN_DATA_PATH =  Path(base_path) / data_path['generated'] / cfg['model']['cn_use']
+    LOG_PATH = Path(base_path) / data_path['real'] 
 
     logger.info(f'Reading images from {GEN_DATA_PATH}')
 
@@ -120,7 +123,7 @@ def main(cfg : DictConfig) -> None:
 
     logger.info(f'Using a {METRIC_MODE} approach, metrics: {metrics} and device: {device}')
 
-    overall_scores = {}
+    overall_scores = {"score":[], "metric":[]}
     for metric_name in tqdm(metrics):
         logger.info(f'Measure using {metric_name} metric.')
 
@@ -130,18 +133,26 @@ def main(cfg : DictConfig) -> None:
 
         scores, avg_score = normalize(scores)
 
-        overall_scores[metric_name] = scores, avg_score
+        overall_scores["score"] = [*overall_scores["score"], *scores]
+        overall_scores["metric"] = [*overall_scores["metric"], *[metric_name for _ in range(len(scores))] ]
+
+    overall_scores["score"] = np.array(overall_scores["score"])
+    overall_scores["metric"] = np.array(overall_scores["metric"])
 
     global_avg_score = 0
     for metric_name in overall_scores:
-        scores, avg_score = overall_scores[metric_name]
+        scores = overall_scores["score"][overall_scores["metric"]==metric_name]
+        avg_score = scores.mean()
         global_avg_score += avg_score
-        plt.plot(image_names, scores, label = f'Avg score of {metric_name}: {avg_score}')
+        # plt.plot(image_names, scores, label = f'Avg score of {metric_name}: {avg_score}')
     global_avg_score = global_avg_score / len(metrics)
-
+    
+    fig, ax = plt.subplots(1,1)
+    ax = sns.boxplot(data=overall_scores, x="metric", y="score", ax=ax)
     plt.title(f'Dataset: {os.path.basename(str(GEN_DATA_PATH))}\nGlobal avg score: {global_avg_score}',loc='left')
     plt.legend()
-    plt.show()
+    file_name = "metrics" + cfg['model']['cn_use'] + ".png"
+    plt.savefig(LOG_PATH / file_name)
 
 
 if __name__ == '__main__':

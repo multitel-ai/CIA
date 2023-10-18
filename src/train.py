@@ -4,19 +4,28 @@ import sys
 import uuid
 
 from pathlib import Path
-from omegaconf import DictConfig
+from omegaconf import DictConfig 
+
 
 # TODO: fix this, I do not like this at all
-sys.path.append(os.path.join(sys.path[0], "ultralytics"))
+sys.path.append(os.path.join(os.getcwd(), "ultralytics")) 
 from ultralytics import YOLO
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config")
+@hydra.main(version_base=None, config_path=f"..{os.sep}conf", config_name="config")
 def main(cfg: DictConfig) -> None:
     data = cfg['data']
-    base_path = Path(data['base'])
-    REAL_data = Path(base_path) / data['real']
-    data_yaml_path = REAL_data / 'data.yaml'
+    base_path = Path(data['base']) 
+    GEN_DATA_PATH =  Path(base_path) / data['generated'] / cfg['model']['cn_use']
+    
+    if cfg['ml']['augmentation_percent']==0:  
+        REAL_DATA = Path(base_path) / data['real'] 
+    else:
+        fold = cfg['model']['cn_use'] + str(cfg['ml']['augmentation_percent'])
+        REAL_DATA = Path(base_path) / data['real'] / fold
+    
+    run = "" if cfg['ml']['augmentation_percent']==0 else cfg['model']['cn_use'] + str(cfg['ml']['augmentation_percent'])
+    data_yaml_path = REAL_DATA / 'data.yaml'
 
     model = YOLO("yolov8n.yaml")
     cn_use = cfg['model']['cn_use']

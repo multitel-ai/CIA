@@ -35,7 +35,7 @@ class YOLODataset(BaseDataset):
     def __init__(self, *args, data=None, use_segments=False, use_keypoints=False, **kwargs):
         self.use_segments = use_segments
         self.use_keypoints = use_keypoints
-        self.data = data
+        self.data = data 
         assert not (self.use_segments and self.use_keypoints), 'Can not use both segments and keypoints.'
         super().__init__(*args, **kwargs)
 
@@ -93,8 +93,10 @@ class YOLODataset(BaseDataset):
 
     def get_labels(self):
         """Returns dictionary of labels for YOLO training."""
-        self.label_files = img2label_paths(self.im_files)
-        cache_path = Path(self.label_files[0]).parent.with_suffix('.cache')
+        self.label_files = img2label_paths(self.im_files) 
+        path = self.label_files[0] 
+        path = Path(path).parent if ("val" in path) or ("test" in path) else Path(self.data["path"]) / "labels"
+        cache_path = path.with_suffix('.cache') 
         try:
             cache, exists = load_dataset_cache_file(cache_path), True  # attempt to load a *.cache file
             assert cache['version'] == DATASET_CACHE_VERSION  # matches current version
