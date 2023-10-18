@@ -88,7 +88,8 @@ class BaseDataset(Dataset):
         if cache == 'ram' and not self.check_cache_ram():
             cache = False
         self.ims, self.im_hw0, self.im_hw = [None] * self.ni, [None] * self.ni, [None] * self.ni
-        self.npy_files = [Path(f).with_suffix('.npy') for f in self.im_files]
+        # self.npy_files = [Path(f).with_suffix('.npy') for f in self.im_files]
+        self.npy_files = [Path(self.data['path'] / f.split(os.sep)[-1]).with_suffix('.npy') for f in self.im_files]
         if cache:
             self.cache_images(cache)
 

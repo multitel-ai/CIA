@@ -32,24 +32,24 @@ PIN_MEMORY = str(os.getenv('PIN_MEMORY', True)).lower() == 'true'  # global pin_
 def img2label_paths(img_paths):
     """Define label paths as a function of image paths."""
     label_paths = []
-    for image in img_paths:
-
-        if '/real/' in image:
+    for image in img_paths: 
+        if f'{os.sep}real{os.sep}' in image:
             base_path = image.split(f'{os.sep}real{os.sep}')[0]
-        elif '/test/' in image:
+        elif f'{os.sep}test{os.sep}' in image:
             base_path = image.split(f'{os.sep}test{os.sep}')[0]
-        elif '/val/' in image:
+        elif f'{os.sep}val{os.sep}' in image:
             base_path = image.split(f'{os.sep}val{os.sep}')[0]
-        elif '/generated/' in image:
+        elif f'{os.sep}generated{os.sep}' in image:
             base_path = image.split(f'{os.sep}generated{os.sep}')[0]
-
+            
         label_name = image.split(f'{os.sep}')[-1].split('.')[0].split('_')[0] + '.txt'
-
-        label_path = Path(base_path) / 'real' / 'labels' / label_name
+        if f'{os.sep}val{os.sep}' in image:
+            label_path = Path(base_path) / 'val' / 'labels' / label_name
+        elif f'{os.sep}test{os.sep}' in image:
+            label_path = Path(base_path) / 'test' / 'labels' / label_name
+        else:
+            label_path = Path(base_path) / 'real' / 'labels' / label_name
         label_paths += [str(label_path.absolute())]
-
-        if '/generated/' in str(label_path.absolute()):
-            print(label_path)
 
     return label_paths
 

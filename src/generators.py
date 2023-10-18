@@ -80,15 +80,15 @@ class SDCN:
         self.pipe.enable_model_cpu_offload()
         self.pipe.enable_xformers_memory_efficient_attention()
 
-    def __str__(self) -> str:
+    def __str__(self): # -> str:
         return f'SDCN({self.control_model})'
 
     def gen(self,
-            condition: np.array | List[np.array],
-            positive_prompts: List[str],
-            negative_prompts: List[str],
-            quality: str = 30,
-            guidance_scale: float = 7.0,
+            condition, #: np.array | List[np.array],
+            positive_prompts, #: List[str],
+            negative_prompts, #: List[str],
+            quality : str = 30, # : str = 30,
+            guidance_scale=7.0, # : float = 7.0,
         ):
         generator = [
             torch.Generator(device=self.device).manual_seed(self.seed)
@@ -114,7 +114,7 @@ class PromptGenerator:
         self.vocabulary = cfg['vocabulary']
         self.prompt_templates = cfg['prompt_templates']
 
-    def _change_token(self, token: str) -> str:
+    def _change_token(self, token): # : str) -> str:
         # Search in the vocabulary for words in the same family, pick one
         # if possible and return it
         for vocabulary_class in self.vocabulary:
@@ -126,7 +126,7 @@ class PromptGenerator:
                     return random.choice(other_tokens)
         return token
 
-    def prompts(self, num_prompts: int, phrase: str) -> List[str]:
+    def prompts(self, num_prompts, phrase): # : int, phrase: str) -> List[str]:
         """
         Generates unique and different prompts in the format of the given phrase.
         It works by tokenizing the given phrase and changing each token whenever
@@ -151,7 +151,7 @@ class PromptGenerator:
 
         return phrase_list
 
-    def max_template_prompts(self) -> int:
+    def max_template_prompts(self): # -> int:
         """
         Counts the maximum number of template prompts that can be generated
         with the exisitng prompt_templates
@@ -177,7 +177,7 @@ class PromptGenerator:
 
         return counter
 
-    def template_prompts(self, num_prompts: int) -> list:
+    def template_prompts(self, num_prompts): # : int) -> list:
         """
         # Generates unique prompts from the template prompts
         Args: num_prompts; int; number of prompts that are required

@@ -83,7 +83,7 @@ def main(cfg: DictConfig) -> None:
 
     REAL_DATA_PATH.mkdir(parents=True, exist_ok=True)
     COCO_PATH.mkdir(parents=True, exist_ok=True)
-
+    
     # Download if necessary
     image_path, annotations_path, bbx_path, caps_path = download_coco(COCO_PATH)
     coco_version = 'train2017'
@@ -91,7 +91,7 @@ def main(cfg: DictConfig) -> None:
     annFile = annotations_path / f'instances_{coco_version}.json'
     annFile_keypoints = annotations_path / f'person_keypoints_{coco_version}.json'
     annFile_captions = annotations_path / f'captions_{coco_version}.json'
-
+    """
     coco = COCO(annFile.absolute())
     coco_keypoints = COCO(annFile_keypoints.absolute())
     coco_captions = COCO(annFile_captions.absolute())
@@ -125,7 +125,7 @@ def main(cfg: DictConfig) -> None:
         with open(captions_text_path, 'w') as file:
             captions = [caps['caption'] for caps in caps_anns]
             file.write('\n'.join(captions))
-
+    """
     # Prepare the data for training and validation
     real_data_images = REAL_DATA_PATH / 'images'
     real_data_labels = REAL_DATA_PATH / 'labels'
@@ -153,10 +153,10 @@ def main(cfg: DictConfig) -> None:
 
     counter = 0
     for file_name in tqdm(coco_images, unit='img'):
-        counter += 1
 
-        if counter >= VAL_NB + TEST_NB + TRAIN_NB:
+        if counter > VAL_NB + TEST_NB + TRAIN_NB:
             break
+        counter += 1
 
         name =  file_name.split('.')[0]
         img_file = name + '.jpg'
@@ -167,11 +167,11 @@ def main(cfg: DictConfig) -> None:
         caption = caps_path / txt_file
 
         if os.path.isfile(image) and os.path.isfile(label) and os.path.isfile(caption):
-            if counter < VAL_NB:
+            if counter <= VAL_NB:
                 images_dir = Path(str(real_data_images).replace('/real/', '/val/'))
                 labels_dir = Path(str(real_data_labels).replace('/real/', '/val/'))
                 test_dir = Path(str(real_data_captions).replace('/real/', '/val/'))
-            elif counter < VAL_NB + TEST_NB:
+            elif counter <= VAL_NB + TEST_NB:
                 images_dir = Path(str(real_data_images).replace('/real/', '/test/'))
                 labels_dir = Path(str(real_data_labels).replace('/real/', '/test/'))
                 test_dir = Path(str(real_data_captions).replace('/real/', '/test/'))

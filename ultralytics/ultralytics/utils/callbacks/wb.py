@@ -33,7 +33,6 @@ def _log_plots(plots, step):
 
 def on_pretrain_routine_start(trainer):
     """Initiate and start project if module is present."""
-    wb.run or wb.init(project = trainer.args.project or 'YOLOv8', name = trainer.args.name, config = vars(trainer.args), entity = "sdcn-nantes")
     yaml_dir = trainer.args.data
     with open(yaml_dir, 'r') as file:
         yaml_file = yaml.safe_load(file)
@@ -49,6 +48,13 @@ def on_pretrain_routine_start(trainer):
     train_images_up = np.expand_dims(np.array(train_images), axis=1)
     val_images_up = np.expand_dims(np.array(val_images), axis=1)
     test_images_up = np.expand_dims(np.array(test_images), axis=1)
+    control_net = yaml_file['train'].split("/")[-2][:-3]
+    if control_net == "r": 
+        control_net = "Starting_point" # "baseline"  
+    wandb_config = {"control_net":control_net, "data_size":len(train_images)}
+    wandb_config = {**wandb_config, **vars(trainer.args)}
+    wb.run or wb.init(project = trainer.args.project or 'YOLOv8', name = trainer.args.name, 
+                      config = wandb_config, entity = "sdcn-nantes")
     table_train = wb.Table(columns=["Train_images"], data = train_images_up)
     table_val = wb.Table(columns=["Val_images"], data=val_images_up)
     table_test = wb.Table(columns=["Test_images"], data=test_images_up)
