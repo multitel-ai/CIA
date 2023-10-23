@@ -91,7 +91,8 @@ def main(cfg: DictConfig) -> None:
     annFile = annotations_path / f'instances_{coco_version}.json'
     annFile_keypoints = annotations_path / f'person_keypoints_{coco_version}.json'
     annFile_captions = annotations_path / f'captions_{coco_version}.json'
-    """
+    
+
     coco = COCO(annFile.absolute())
     coco_keypoints = COCO(annFile_keypoints.absolute())
     coco_captions = COCO(annFile_captions.absolute())
@@ -125,7 +126,7 @@ def main(cfg: DictConfig) -> None:
         with open(captions_text_path, 'w') as file:
             captions = [caps['caption'] for caps in caps_anns]
             file.write('\n'.join(captions))
-    """
+    
     # Prepare the data for training and validation
     real_data_images = REAL_DATA_PATH / 'images'
     real_data_labels = REAL_DATA_PATH / 'labels'
@@ -166,7 +167,10 @@ def main(cfg: DictConfig) -> None:
         label = bbx_path / txt_file
         caption = caps_path / txt_file
 
+        print(image, label, caption)
+
         if os.path.isfile(image) and os.path.isfile(label) and os.path.isfile(caption):
+            print('here !')
             if counter <= VAL_NB:
                 images_dir = Path(str(real_data_images).replace('/real/', '/val/'))
                 labels_dir = Path(str(real_data_labels).replace('/real/', '/val/'))
