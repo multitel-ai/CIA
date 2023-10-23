@@ -49,7 +49,7 @@ def download_coco(data_path: Path,
     path_to_data_zip = data_path / data_zip_name
     path_to_annotations_zip = data_path / annotations_zip_name
 
-    data_url = 'https://transfer.sh/FW8MjTFjDv/Coco_1FullPerson.zip'
+    data_url = 'https://cloud.deepilia.com/s/BQcq8nQxFjizdFz/download/Coco_1FullPerson.zip'
     annotations_url = 'http://images.cocodataset.org/annotations/annotations_trainval2017.zip'
 
     # Only perform the work if necessary
