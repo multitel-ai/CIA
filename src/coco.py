@@ -170,7 +170,6 @@ def main(cfg: DictConfig) -> None:
         print(image, label, caption)
 
         if os.path.isfile(image) and os.path.isfile(label) and os.path.isfile(caption):
-            print('here !')
             if counter <= VAL_NB:
                 images_dir = Path(str(real_data_images).replace('/real/', '/val/'))
                 labels_dir = Path(str(real_data_labels).replace('/real/', '/val/'))
