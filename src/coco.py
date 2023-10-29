@@ -15,15 +15,15 @@ from common import logger
 
 def cocobox2yolo(img_path, coco_box):
     I = cv2.imread(img_path)
-    image_hight, image_width = I.shape[0:2]
+    image_height, image_width = I.shape[0:2]
 
-    [left, top, box_width, box_hight] = coco_box
+    [left, top, box_width, box_height] = coco_box
     x_center = (left + box_width / 2) / image_width
-    y_center = (top + box_hight / 2) / image_hight
+    y_center = (top + box_height / 2) / image_height
 
     box_width /= image_width
-    box_hight /= image_hight
-    yolo_box = [x_center, y_center, box_width, box_hight]
+    box_height /= image_height
+    yolo_box = [x_center, y_center, box_width, box_height]
 
     return yolo_box
 
@@ -157,7 +157,6 @@ def main(cfg: DictConfig) -> None:
 
         if counter > VAL_NB + TEST_NB + TRAIN_NB:
             break
-        counter += 1
 
         name =  file_name.split('.')[0]
         img_file = name + '.jpg'
@@ -167,17 +166,17 @@ def main(cfg: DictConfig) -> None:
         label = bbx_path / txt_file
         caption = caps_path / txt_file
 
-        print(image, label, caption)
+        # print(image, label, caption)
 
         if os.path.isfile(image) and os.path.isfile(label) and os.path.isfile(caption):
-            if counter <= VAL_NB:
-                images_dir = Path(str(real_data_images).replace('/real/', '/val/'))
-                labels_dir = Path(str(real_data_labels).replace('/real/', '/val/'))
-                test_dir = Path(str(real_data_captions).replace('/real/', '/val/'))
-            elif counter <= VAL_NB + TEST_NB:
-                images_dir = Path(str(real_data_images).replace('/real/', '/test/'))
-                labels_dir = Path(str(real_data_labels).replace('/real/', '/test/'))
-                test_dir = Path(str(real_data_captions).replace('/real/', '/test/'))
+            if counter < VAL_NB:
+                images_dir = Path(str(real_data_images).replace(f'{os.sep}real{os.sep}', f'{os.sep}val{os.sep}'))
+                labels_dir = Path(str(real_data_labels).replace(f'{os.sep}real{os.sep}', f'{os.sep}val{os.sep}'))
+                test_dir = Path(str(real_data_captions).replace(f'{os.sep}real{os.sep}', f'{os.sep}val{os.sep}'))
+            elif counter < VAL_NB + TEST_NB:
+                images_dir = Path(str(real_data_images).replace(f'{os.sep}real{os.sep}', f'{os.sep}test{os.sep}'))
+                labels_dir = Path(str(real_data_labels).replace(f'{os.sep}real{os.sep}', f'{os.sep}test{os.sep}'))
+                test_dir = Path(str(real_data_captions).replace(f'{os.sep}real{os.sep}', f'{os.sep}test{os.sep}'))
             else:
                 images_dir = real_data_images
                 labels_dir = real_data_labels
@@ -191,6 +190,7 @@ def main(cfg: DictConfig) -> None:
             shutil.copy(label, labels_dir / txt_file)
             shutil.copy(caption, test_dir / txt_file)
 
+            counter += 1
 
 if __name__ == "__main__":
    main()
