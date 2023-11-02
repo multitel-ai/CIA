@@ -12,6 +12,9 @@ def create_mixte_dataset(real_images_dir: str,
                          synth_images_dir: str,
                          txt_dir: str,
                          per_synth_data: float,
+                         train_nb:int,
+                         val_nb:int,
+                         test_nb:int,
                          formats: List[str] = ['jpg', 'png', 'jpeg']):
     """
     Construct the txt file containing a percentage of real and synthetic data
@@ -34,10 +37,10 @@ def create_mixte_dataset(real_images_dir: str,
     val_images_path = Path(str(real_images_path.absolute()).replace('/real/', '/val/'))
     test_images_path = Path(str(real_images_path.absolute()).replace('/real/', '/test/'))
 
-    real_images = list_images(real_images_path, formats, 250)
+    real_images = list_images(real_images_path, formats, train_nb)
     synth_images = list_images(synth_images_dir, formats)
-    val_images = list_images(val_images_path, formats)
-    test_images = list_images(test_images_path, formats)
+    val_images = list_images(val_images_path, formats, val_nb)
+    test_images = list_images(test_images_path, formats, test_nb)
 
     # shuffle images
     random.Random(42).shuffle(real_images)
@@ -63,16 +66,14 @@ def create_mixte_dataset(real_images_dir: str,
     create_yaml_file(data_yaml_path, train_txt_path, val_txt_path, test_txt_path)
 
 
-def list_images(images_path: Path, formats: List[str], max_ = None):
+def list_images(images_path: Path, formats: List[str], limit:int = None):
     images = []
     for format in formats:
         images += [
             *glob.glob(str(images_path.absolute()) + f'/*.{format}')
         ]
-    if max_ is None:
-        return images
-    else:
-        return images[:250]
+    return images[:limit]
+
 
 def create_yaml_file(save_path: Path, train: Path, val: Path, test: Path):
     """
@@ -113,7 +114,11 @@ def main(cfg : DictConfig) -> None:
         os.makedirs(fold)
 
     create_mixte_dataset(
-        REAL_DATA_PATH, GEN_DATA_PATH, fold, cfg['ml']['augmentation_percent']
+        REAL_DATA_PATH, GEN_DATA_PATH, fold, 
+        cfg['ml']['augmentation_percent'],
+        cfg['ml']['train_nb'],
+        cfg['ml']['val_nb'],
+        cfg['ml']['test_nb'],
     )
 
 
