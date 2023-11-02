@@ -4,7 +4,6 @@ import cv2
 import wget
 import zipfile
 import shutil
-import spacy
 import numpy as np
 
 from omegaconf import DictConfig
@@ -12,50 +11,15 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 from tqdm import tqdm
 
-from common import logger
+from common import logger, contains_word, calculate_iou, bbox_min_max_to_center_dims
 
-PERSON_WORDS = [ "individual", "human", "human being", "mortal", "soul", "creature", "man", "woman", "girl", "boy", "child", "kid", "baby", "toddler", "adult", "person", "humanity", "personage", "being", "someone", "somebody", "folk", "mankind", "fellow", "chap", "dude", "gentleman", "lady", "gent", "lass", "character", "resident", "residentiary", "homo sapiens", "homosapien", "mother", "mom", "mum", "mama", "mommy", "father", "dad", "daddy", "papa", "parent", "sister", "brother", "grandparent", "cousin", "aunt", "uncle", "niece", "nephew", "friend", "acquaintance", "companion", "colleague", "associate", "ally", "neighbor", "stranger", "mate", "buddy", "pal", "partner", "confidant", "confidante", "bachelor", "bachelorette", "betrothed", "bride", "groom", "spouse", "husband", "wife", "fiance", "fiancee"]
+PERSON_WORDS = [ "individual", "human", "human being", "mortal", "soul", "creature", "man", "woman", "girl", "boy", "child", "kid", "baby", "toddler", "adult", "person", "humanity", "personage", "being", "someone", "somebody", "folk", "mankind", "fellow", "chap", "dude", "gentleman", "lady", "gent", "lass", "character", "resident", "residentiary", "homo sapiens", "homosapien", "mother", "mom", "mum", "mama", "mommy", "father", "dad", "daddy", "papa", "parent", "sister", "brother", "grandparent", "cousin", "aunt", "uncle", "niece", "nephew", "friend", "acquaintance", "companion", "colleague", "associate", "ally", "neighbor", "stranger", "mate", "buddy", "pal", "partner", "confidant", "confidante", "bachelor", "bachelorette", "betrothed", "bride", "groom", "spouse", "husband", "wife", "fiance", "fiancee", "male", "female", "player", "referee", "catcher", "thrower"]
 
+GROUP_WORDS = ['spectators', 'committee', 'faction', 'organization', 'society', 'regiment', 'troop', 'party', 'corps', 'company', 'bunch', 'clan', 'division', 'sect', 'gang', 'gathering', 'congregation', 'throng', 'staff', 'group', 'posse', 'battalion', 'crowd', 'tribe', 'force', 'crew', 'community', 'assembly', 'unit', 'squad', 'multitude', 'association', 'children', 'mob', 'family', 'band', 'club', 'team', 'ensemble', 'collective', 'females', 'audience', 'kids', 'other']
 
-def calculate_iou(box1, box2):
-    """
-    Calculate Intersection over Union (IoU) between two bounding boxes.
-
-    Args:
-        box1 (np.array): Array representing the first bounding box in YOLOv5 format (x_center, y_center, width, height).
-        box2 (np.array): Array representing the second bounding box in YOLOv5 format (x_center, y_center, width, height).
-
-    Returns:
-        float: IoU score between the two bounding boxes.
-    """
-    x1, y1, w1, h1 = box1
-    x2, y2, w2, h2 = box2
-
-    # Calculate coordinates of the intersection rectangle
-    x_left = max(x1 - w1 / 2, x2 - w2 / 2)
-    y_top = max(y1 - h1 / 2, y2 - h2 / 2)
-    x_right = min(x1 + w1 / 2, x2 + w2 / 2)
-    y_bottom = min(y1 + h1 / 2, y2 + h2 / 2)
-
-    if x_right < x_left or y_bottom < y_top:
-        return 0.0
-
-    intersection_area = (x_right - x_left) * (y_bottom - y_top)
-    box1_area = w1 * h1
-    box2_area = w2 * h2
-
-    # Calculate IoU
-    iou = intersection_area / (box1_area + box2_area - intersection_area)
-    return iou
-
-
-def nlp_sentence_person_counter(model, sentence):
-    # Process the sentence with spaCy
-    doc = model(sentence)
-    # Count the "PERSON" entities in the sentence
-    person_count = len([ent.text for ent in doc.ents if ent.label_ == "PERSON"])
-    return person_count
-
+BIG_NUMBERS_WORDS = [
+    "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "thirty","forty", "fifty", "sixty", "seventy","eighty", "ninety","hundred"
+]
 
 def filter_redundant_boxes(boxes, threshold=0.9):
     """
@@ -281,31 +245,14 @@ def get_annotations(fn):
     return anno_info
 
 
-def contains_only_one_substring(input_string, substring_list):
-    count = 0
-    found_substring = None
-
-    for substring in substring_list:
-        if substring in input_string:
-            count += 1
-            found_substring = substring
-
-    return count == 1
-
 
 def region_info_to_yolov5(image_path, region_info, class_id = 0):
     I = cv2.imread(image_path)
     image_height, image_width = I.shape[0:2]
 
-    xmin = region_info['x_min']
-    ymin = region_info['y_min']
-    xmax = region_info['x_max']
-    ymax = region_info['y_max']
-
-    x_center = (xmin + xmax) / 2.0 / image_width
-    y_center = (ymin + ymax) / 2.0 / image_height
-    width = (xmax - xmin) / image_width
-    height = (ymax - ymin) / image_height
+    x_center, y_center, width, height = bbox_min_max_to_center_dims(
+        **region_info, image_width = image_width, image_height = image_height
+    )
 
     # Assemble the YOLOv5 formatted string
     yolo_str = f"{class_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}"
@@ -313,54 +260,76 @@ def region_info_to_yolov5(image_path, region_info, class_id = 0):
     return yolo_str
 
 
-def create_region_desc(sentence_file, annotation_file, image_id, image_file, nlp_model):
+def create_region_desc(sentence_file, annotation_file, image_id, image_file):
     sen_data = get_sentence_data(sentence_file)
     anno_data = get_annotations(annotation_file)
 
-    image_info = {'id': image_id, 'regions': [],  'captions' : []}
+    boxes = []
+    captions = []
 
     for description in sen_data:
-        image_info['captions'] += [description['sentence']]
+        captions += [description['sentence']]
+    
 
-    for anno_id in anno_data['boxes'].keys():
-        anno_boxes = anno_data['boxes'][anno_id]
-        for anno_box in anno_boxes:
-            # print()
-            for description in sen_data:
-                # print(description['sentence'])
-                for phrase in description['phrases']:
-                    # print("->>", phrase['phrase_type'], phrase)
-                    if phrase['phrase_id'] == str(anno_id) \
-                        and phrase['phrase_type'][0] == 'people':
+    # get all boxes with related token keys
+    ann_ids = []
+    ann_boxes = []
+    for key, boxes_list in anno_data['boxes'].items():
+        for b in boxes_list:
+            ann_ids += [key]
+            ann_boxes += [b]
 
-                        if contains_only_one_substring(
-                            phrase['phrase'].lower(), 
-                            PERSON_WORDS
-                        ):
-                            region = region_info_to_yolov5(image_file, {
-                                'x_min': anno_box[0],
-                                'y_min': anno_box[1],
-                                'x_max': anno_box[2],
-                                'y_max': anno_box[3],
-                            })
 
-                            if region not in image_info['regions']:
-                                image_info['regions'] += [region]
+    # get all phrases from all sentences
+    ann_phrases = {i: [] for i in ann_ids}
+    for description in sen_data:
+        # print(description['sentence'])
+        for phrase in description['phrases']:
+            if 'people' in phrase['phrase_type'] and phrase['phrase_id'] in ann_phrases:
+                ann_phrases[phrase['phrase_id']] += [phrase['phrase']]
+
+    
+    for anno_id, anno_box in zip(ann_ids, ann_boxes):
+        # print(anno_id, ann_phrases[anno_id])
+        for phrase in ann_phrases[anno_id]:
+            # print(phrase, contains_word(phrase, GROUP_WORDS + BIG_NUMBERS_WORDS))
+            # filter all images with crowds
+            if contains_word(phrase, GROUP_WORDS + BIG_NUMBERS_WORDS):
+                return [], []
+            
+            # accept only phrases with a single person
+            if contains_word(phrase, PERSON_WORDS):
+            # contains_only_one_substring(phrase.lower(), PERSON_WORDS):
+
+                    box = {
+                        'x_min': anno_box[0],
+                        'y_min': anno_box[1],
+                        'x_max': anno_box[2],
+                        'y_max': anno_box[3],
+                    }
+
+                    boxes += [box]
+
+
+    yolo_annotations = []
+    for box in boxes:
+        yolo_annotations += [region_info_to_yolov5(image_file, box)]
 
     # filter boxes that intersect too much
-    image_info['regions'] = filter_redundant_yolo_annotations(image_info['regions'])
+    yolo_annotations = filter_redundant_yolo_annotations(yolo_annotations)
 
-    if image_info['regions']:
-        rep_found = False
-        for sentence in sen_data:
-            if nlp_sentence_person_counter(nlp_model, sentence['sentence']) > 1 or 'people' in sentence['sentence'].lower() or 'group' in sentence['sentence'].lower():
-                rep_found = True
-                break
+
+    """
+    # View for debugging
+    image = cv2.imread(image_file)
+    for box in boxes:
+        image = cv2.rectangle(image, (box['x_min'], box['y_min']), (box['x_max'], box['y_max']), (0, 255, 0), 2)
+    cv2.imshow(image_id, image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    """        
     
-        if rep_found:
-            image_info['regions'] = []
-
-    return image_info
+    return yolo_annotations, captions
 
 
 
@@ -379,7 +348,6 @@ def main(cfg: DictConfig) -> None:
     # Download if necessary
     images_path, annotations_path, sentences_path, caps_path, labels_path = download_flickr(FLICKR_PATH)
 
-    nlp_model = spacy.load("en_core_web_sm")
     all_images = list(images_path.glob('*.jpg'))
     
     logger.info(f'Extracting captions and boxes info from Initial Dataset')
@@ -399,18 +367,19 @@ def main(cfg: DictConfig) -> None:
 
         # print(image_file, sentence_file, annotation_file, label_file, caption_file)
 
-        data = create_region_desc(sentence_file, annotation_file, name, str(image_file), nlp_model)
+        yolo_labels, captions = create_region_desc(sentence_file, annotation_file, name, str(image_file))
 
-        if data['regions']:
+        if yolo_labels:
             # os.system(f"cp flickr30k_extracted/Images/{filename} images/{filename}")
         
             # Save labels to a text file in the 'labels' folder
             with open(label_file, "w") as label_file:
-                label_file.write("\n".join(data['regions']))
+                label_file.write("\n".join(yolo_labels))
 
             # Save filtered captions to a text file in the 'captions' folder
             with open(caption_file, "w") as caption_file:
-                caption_file.write("\n".join(data['captions']))
+                caption_file.write("\n".join(captions))
+            
 
     # Prepare the data for training and validation
     real_data_images = REAL_DATA_PATH / 'images'
