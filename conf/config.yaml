@@ -13,6 +13,8 @@ ml:
   train_nb: 250
   augmentation_percent: 0.1
   epochs: 300
+  wandb:
+    project: sdcn-flickr30k
 
 prompt:
   template: vocabulary

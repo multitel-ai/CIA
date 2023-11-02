@@ -55,7 +55,7 @@ def main(cfg: DictConfig) -> None:
     model.train(
         data = str(data_yaml_path.absolute()),
         epochs = cfg['ml']['epochs'],
-        project = 'sdcn',
+        project = cfg['ml']['wandb']['project'],
         name = name
     )
 
