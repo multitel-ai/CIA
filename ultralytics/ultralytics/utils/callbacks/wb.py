@@ -36,28 +36,44 @@ def on_pretrain_routine_start(trainer):
     yaml_dir = trainer.args.data
     with open(yaml_dir, 'r') as file:
         yaml_file = yaml.safe_load(file)
+
     train_txt_path = yaml_file['train']#+ 
     val_txt_path = yaml_file['val'] #  + yaml_file['val']
     test_txt_path = yaml_file['test'] # + yaml_file['test']
+
     with open(train_txt_path) as f: train_images = f.readlines()
     with open(val_txt_path) as f: val_images = f.readlines()
     with open(test_txt_path) as f: test_images = f.readlines()
+
     train_images = sorted([img.replace('\n', '') for img in train_images])
     val_images = sorted([img.replace('\n', '') for img in val_images])
     test_images = sorted([img.replace('\n', '') for img in test_images])
+
     train_images_up = np.expand_dims(np.array(train_images), axis=1)
     val_images_up = np.expand_dims(np.array(val_images), axis=1)
     test_images_up = np.expand_dims(np.array(test_images), axis=1)
+
     control_net = yaml_file['train'].split("/")[-2][:-3]
     if control_net == "r": 
         control_net = "Starting_point" # "baseline"  
-    wandb_config = {"control_net":control_net, "data_size":len(train_images)}
-    wandb_config = {**wandb_config, **vars(trainer.args)}
-    wb.run or wb.init(project = trainer.args.project or 'YOLOv8', name = trainer.args.name, 
-                      config = wandb_config, entity = "sdcn-nantes")
-    table_train = wb.Table(columns=["Train_images"], data = train_images_up)
-    table_val = wb.Table(columns=["Val_images"], data=val_images_up)
-    table_test = wb.Table(columns=["Test_images"], data=test_images_up)
+
+    wandb_config = {"control_net": control_net, "data_size": len(train_images), **vars(trainer.args)}
+
+    # fix hydra multirun causing wandb to not push logs
+    os.environ['WANDB_START_METHOD'] = 'thread'
+
+    wb.run or wb.init(
+        project = trainer.args.project or 'YOLOv8', 
+        name = trainer.args.name, 
+        config = wandb_config, 
+        entity = "sdcn-nantes",
+        # settings = wb.Settings(start_method="thread")
+    )
+
+    table_train = wb.Table(columns = ["Train_images"], data = train_images_up)
+    table_val = wb.Table(columns = ["Val_images"], data = val_images_up)
+    table_test = wb.Table(columns = ["Test_images"], data = test_images_up)
+
     wb.log({"Tables/Train": table_train})
     wb.log({"Tables/Val": table_val})
     wb.log({"Tables/Test": table_test})
@@ -88,6 +104,7 @@ def on_train_end(trainer):
     if trainer.best.exists():
         art.add_file(trainer.best)
         wb.run.log_artifact(art, aliases=['best'])
+    wb.run.finish()
 
 
 callbacks = {
