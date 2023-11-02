@@ -10,7 +10,7 @@ data:
 ml:
   val_nb: 300
   test_nb: 300
-  train_nb: 5000
+  train_nb: 250
   augmentation_percent: 0.1
   epochs: 300
 

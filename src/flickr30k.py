@@ -4,6 +4,8 @@ import cv2
 import wget
 import zipfile
 import shutil
+import spacy
+import numpy as np
 
 from omegaconf import DictConfig
 from pathlib import Path
@@ -11,6 +13,117 @@ import xml.etree.ElementTree as ET
 from tqdm import tqdm
 
 from common import logger
+
+PERSON_WORDS = [ "individual", "human", "human being", "mortal", "soul", "creature", "man", "woman", "girl", "boy", "child", "kid", "baby", "toddler", "adult", "person", "humanity", "personage", "being", "someone", "somebody", "folk", "mankind", "fellow", "chap", "dude", "gentleman", "lady", "gent", "lass", "character", "resident", "residentiary", "homo sapiens", "homosapien", "mother", "mom", "mum", "mama", "mommy", "father", "dad", "daddy", "papa", "parent", "sister", "brother", "grandparent", "cousin", "aunt", "uncle", "niece", "nephew", "friend", "acquaintance", "companion", "colleague", "associate", "ally", "neighbor", "stranger", "mate", "buddy", "pal", "partner", "confidant", "confidante", "bachelor", "bachelorette", "betrothed", "bride", "groom", "spouse", "husband", "wife", "fiance", "fiancee"]
+
+
+def calculate_iou(box1, box2):
+    """
+    Calculate Intersection over Union (IoU) between two bounding boxes.
+
+    Args:
+        box1 (np.array): Array representing the first bounding box in YOLOv5 format (x_center, y_center, width, height).
+        box2 (np.array): Array representing the second bounding box in YOLOv5 format (x_center, y_center, width, height).
+
+    Returns:
+        float: IoU score between the two bounding boxes.
+    """
+    x1, y1, w1, h1 = box1
+    x2, y2, w2, h2 = box2
+
+    # Calculate coordinates of the intersection rectangle
+    x_left = max(x1 - w1 / 2, x2 - w2 / 2)
+    y_top = max(y1 - h1 / 2, y2 - h2 / 2)
+    x_right = min(x1 + w1 / 2, x2 + w2 / 2)
+    y_bottom = min(y1 + h1 / 2, y2 + h2 / 2)
+
+    if x_right < x_left or y_bottom < y_top:
+        return 0.0
+
+    intersection_area = (x_right - x_left) * (y_bottom - y_top)
+    box1_area = w1 * h1
+    box2_area = w2 * h2
+
+    # Calculate IoU
+    iou = intersection_area / (box1_area + box2_area - intersection_area)
+    return iou
+
+
+def nlp_sentence_person_counter(model, sentence):
+    # Process the sentence with spaCy
+    doc = model(sentence)
+    # Count the "PERSON" entities in the sentence
+    person_count = len([ent.text for ent in doc.ents if ent.label_ == "PERSON"])
+    return person_count
+
+
+def filter_redundant_boxes(boxes, threshold=0.9):
+    """
+    Filter redundant bounding boxes based on IoU threshold.
+
+    Args:
+        boxes (List[List[float]]): List of bounding boxes in YOLOv5 format (x_center, y_center, width, height).
+        threshold (float): IoU threshold for considering boxes as redundant. Defaults to 0.5.
+
+    Returns:
+        List[List[float]]: List of filtered bounding boxes.
+    """
+    if len(boxes) == 0:
+        return []
+
+    # Convert the list of boxes to numpy array for efficient calculations
+    boxes = np.array(boxes)
+
+    # Initialize a list to store indices of boxes to keep
+    keep_indices = []
+
+    for i in range(len(boxes)):
+        keep = True
+        for j in range(i + 1, len(boxes)):
+            iou = calculate_iou(boxes[i], boxes[j])
+            if iou > threshold:
+                keep = False
+                break
+
+        if keep:
+            keep_indices.append(i)
+
+    # Filter and return the boxes based on the keep_indices
+    filtered_boxes = boxes[keep_indices]
+
+    return filtered_boxes.tolist()
+
+
+def filter_redundant_yolo_annotations(annotations, threshold=0.9):
+    """
+    Filter redundant YOLO annotations based on IoU threshold.
+
+    Args:
+        annotations (List[str]): List of YOLO annotation strings.
+        threshold (float): IoU threshold for considering boxes as redundant. Defaults to 0.5.
+
+    Returns:
+        List[str]: List of filtered YOLO annotation strings.
+    """
+    if len(annotations) == 0:
+        return []
+
+    # Parse YOLO annotations into a list of bounding boxes
+    parsed_annotations = []
+    for annotation in annotations:
+        class_id, x_center, y_center, width, height = annotation.split()
+        parsed_annotations += [[float(x_center), float(y_center), float(width), float(height)]]
+
+    # Filter redundant boxes using the previously defined function
+    filtered_boxes = filter_redundant_boxes(parsed_annotations, threshold)
+
+    # Convert the filtered boxes back to YOLO annotation strings
+    filtered_annotations = [
+        f"0 {box[0]} {box[1]} {box[2]} {box[3]}" for box in filtered_boxes
+    ]
+
+    return filtered_annotations
+
 
 def download_flickr(data_path: Path,
                     captions_path: str = 'Captions',
@@ -200,7 +313,7 @@ def region_info_to_yolov5(image_path, region_info, class_id = 0):
     return yolo_str
 
 
-def create_region_desc(sentence_file, annotation_file, image_id, image_file):
+def create_region_desc(sentence_file, annotation_file, image_id, image_file, nlp_model):
     sen_data = get_sentence_data(sentence_file)
     anno_data = get_annotations(annotation_file)
 
@@ -222,7 +335,7 @@ def create_region_desc(sentence_file, annotation_file, image_id, image_file):
 
                         if contains_only_one_substring(
                             phrase['phrase'].lower(), 
-                            ['man', 'woman', 'lady', 'boy', 'girl', 'child', 'baby', 'person']
+                            PERSON_WORDS
                         ):
                             region = region_info_to_yolov5(image_file, {
                                 'x_min': anno_box[0],
@@ -233,6 +346,19 @@ def create_region_desc(sentence_file, annotation_file, image_id, image_file):
 
                             if region not in image_info['regions']:
                                 image_info['regions'] += [region]
+
+    # filter boxes that intersect too much
+    image_info['regions'] = filter_redundant_yolo_annotations(image_info['regions'])
+
+    if image_info['regions']:
+        rep_found = False
+        for sentence in sen_data:
+            if nlp_sentence_person_counter(nlp_model, sentence['sentence']) > 1 or 'people' in sentence['sentence'].lower() or 'group' in sentence['sentence'].lower():
+                rep_found = True
+                break
+    
+        if rep_found:
+            image_info['regions'] = []
 
     return image_info
 
@@ -253,6 +379,7 @@ def main(cfg: DictConfig) -> None:
     # Download if necessary
     images_path, annotations_path, sentences_path, caps_path, labels_path = download_flickr(FLICKR_PATH)
 
+    nlp_model = spacy.load("en_core_web_sm")
     all_images = list(images_path.glob('*.jpg'))
     
     logger.info(f'Extracting captions and boxes info from Initial Dataset')
@@ -272,7 +399,7 @@ def main(cfg: DictConfig) -> None:
 
         # print(image_file, sentence_file, annotation_file, label_file, caption_file)
 
-        data = create_region_desc(sentence_file, annotation_file, name, str(image_file))
+        data = create_region_desc(sentence_file, annotation_file, name, str(image_file), nlp_model)
 
         if data['regions']:
             # os.system(f"cp flickr30k_extracted/Images/{filename} images/{filename}")
@@ -305,7 +432,6 @@ def main(cfg: DictConfig) -> None:
 
     # move all files
     flickr_images = [label.replace('.txt', '.jpg') for label in os.listdir(labels_path)]
-    print(len(flickr_images))
     length = (VAL_NB + TEST_NB + TRAIN_NB
               if (VAL_NB + TEST_NB + TRAIN_NB) < len(flickr_images)
               else flickr_images)
