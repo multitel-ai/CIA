@@ -29,7 +29,7 @@ def main(cfg: DictConfig) -> None:
 
     model = YOLO("yolov8n.yaml")
     cn_use = cfg['model']['cn_use']
-    aug_percent = cfg['model']['augmentation_percent']
+    aug_percent = cfg['ml']['augmentation_percent']
     name = f"{uuid.uuid4().hex.upper()[0:6]}_{cn_use}_{aug_percent}"
 
     model.train(

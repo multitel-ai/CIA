@@ -11,7 +11,7 @@ ml:
   val_nb: 300
   test_nb: 300
   train_nb: 250
-  augmentation_percent: 0.1
+  augmentation_percent: 0.1 # controls all aug percents parameters everywhere
   epochs: 300
   wandb:
     project: sdcn-flickr30k
@@ -38,7 +38,7 @@ prompt:
 model:
   use_captions: 1
   use_labels: 0
-  augmentation_percent: 0
+  augmentation_percent: 0 # not used at the moment anywhere
   sd: runwayml/stable-diffusion-v1-5
   cn_use: controlnet_segmentation
   cn:
