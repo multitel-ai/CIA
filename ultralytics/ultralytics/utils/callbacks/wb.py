@@ -53,11 +53,7 @@ def on_pretrain_routine_start(trainer):
     val_images_up = np.expand_dims(np.array(val_images), axis=1)
     test_images_up = np.expand_dims(np.array(test_images), axis=1)
 
-    control_net = yaml_file['train'].split("/")[-2][:-3]
-    if control_net == "r": 
-        control_net = "Starting_point" # "baseline"  
-
-    wandb_config = {"control_net": control_net, "data_size": len(train_images), **vars(trainer.args)}
+    wandb_config = {"data_size": len(train_images), **vars(trainer.args)}
 
     # fix hydra multirun causing wandb to not push logs
     os.environ['WANDB_START_METHOD'] = 'thread'
@@ -66,7 +62,7 @@ def on_pretrain_routine_start(trainer):
         project = trainer.args.project or 'YOLOv8', 
         name = trainer.args.name, 
         config = wandb_config, 
-        entity = "sdcn-nantes",
+        entity = trainer.args.entity,
         # settings = wb.Settings(start_method="thread")
     )
 

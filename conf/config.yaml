@@ -14,7 +14,12 @@ ml:
   augmentation_percent: 0.1 # controls all aug percents parameters everywhere
   epochs: 300
   wandb:
-    project: sdcn-flickr30k
+    entity: sdcn-nantes
+    project: sdcn-shit-testing
+  sampling:
+    enable: False
+    metric: brisque # brisque (smaller), dbcnn (smaller), ilniqe (small)
+    type: smaller # "smaller" values or "bigger" values
 
 prompt:
   template: vocabulary
