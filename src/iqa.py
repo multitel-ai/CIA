@@ -11,7 +11,7 @@ from tqdm import tqdm
 from typing import List, Optional, Tuple
 
 from common import logger, find_common_prefix, find_common_suffix
-import numpy
+import numpy as np
 import seaborn as sns
 
 

@@ -71,17 +71,21 @@ def main(cfg: DictConfig) -> None:
    # See reasonment above.
     METRIC_MODE = 'NR'
     device = cfg['iqa']['device']
-    # Hard coding needed metrics for the paper.
-    metrics = ['brisque', 'dbcnn', 'ilniqe']
+    metrics = [metric.lower() for metric in cfg['iqa']['metrics']]
 
     dict_of_metrics = {}
     dict_of_metrics['image_paths'] = image_paths
     dict_of_metrics['name'] = f"{cfg['model']['cn_use']}"
+    dict_of_metrics['best'] = {}
 
     logger.info(f'Using a {METRIC_MODE} approach, metrics: {metrics} and device: {device}')
 
     for metric_name in metrics:
         iqa_model = create_metric(metric_name, device=device, metric_mode=METRIC_MODE)
+        if iqa_model.lower_better:
+            dict_of_metrics['best'][metric_name] = "smaller"
+        else:
+            dict_of_metrics['best'][metric_name] = "bigger"
         scores, _ = measure_several_images(iqa_model, image_paths)
         dict_of_metrics[metric_name] = scores
 
