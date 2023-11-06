@@ -18,8 +18,8 @@ ml:
     project: sdcn-shit-testing
   sampling:
     enable: False
-    metric: brisque # brisque (smaller), dbcnn (smaller), ilniqe (small)
-    type: smaller # "smaller" values or "bigger" values
+    metric: brisque # brisque (smaller is better), dbcnn (bigger is better), ilniqe (smaller is better)
+    sample: best # to take smaller or bigger values is decided depending the metric
 
 prompt:
   template: vocabulary
@@ -77,4 +77,6 @@ model:
 
 iqa:
   device: cuda
-  metrics: ['brisque', 'clipiqa+', 'dbcnn', 'ilniqe', 'niqe', nima]
+  metrics: [brisque, dbcnn, nima, ilniqe]
+  # available metrics : brisque, clipiqa+, dbcnn, ilniqe, niqe, nima, cnniqa, nrqm, pi, ilniqe, niqe
+  # read more on : https://github.com/chaofengc/IQA-PyTorch/blob/main/docs/ModelCard.md

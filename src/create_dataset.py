@@ -33,7 +33,7 @@ def create_mixte_dataset(base_path: str,
     """
 
     if sample['enable']:
-        txt_dir = txt_dir / (sample['metric'] + '_' + sample['type'])
+        txt_dir = txt_dir / (sample['metric'] + '_' + sample['sample'])
 
     if not os.path.isdir(txt_dir): 
         os.makedirs(txt_dir)
@@ -54,12 +54,22 @@ def create_mixte_dataset(base_path: str,
     if sample['enable']:
         with open(sample['score_file'], 'r') as f:
             score_data = json.load(f)
+
+        # set sort direction of synthetic images to work with best or worst
+        if sample['sample'] == 'best':
+            order = score_data['best'][sample['metric']]
+        else:
+            if score_data['best'][sample['metric']] == 'smaller':
+                order = 'bigger'
+            else:
+                order = 'smaller'
+
         synth_images, scores = sort_based_on_score(
             score_data['image_paths'], 
-            score_data[sample['metric']], 
-            sample['type'],
+            score_data[sample['metric']],
+            order
         )
-        synth_images = [str((Path(base_path) / img).absolute()) for img in synth_images]
+        synth_images = [str((Path(base_path) / img).absolute()) for img, score in zip(synth_images, scores)]
         # for i in range(synth_images.__len__()):
         #     print(synth_images[i], scores[i])
     else:

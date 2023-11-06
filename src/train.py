@@ -31,7 +31,7 @@ def main(cfg: DictConfig) -> None:
     cn_use = cfg['model']['cn_use']
     aug_percent = cfg['ml']['augmentation_percent']
     name = f"{uuid.uuid4().hex.upper()[0:6]}_{cn_use}_{aug_percent}"
-    sampling_code_name = (cfg['ml']['sampling']['metric'] + '_' + cfg['ml']['sampling']['type']) 
+    sampling_code_name = (cfg['ml']['sampling']['metric'] + '_' + cfg['ml']['sampling']['sample']) 
 
     model.train(
         data = str(data_yaml_path.absolute()),
