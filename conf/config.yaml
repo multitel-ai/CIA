@@ -17,7 +17,7 @@ ml:
     entity: sdcn-nantes
     project: sdcn-shit-testing
   sampling:
-    enable: False
+    enable: false
     metric: brisque # brisque (smaller is better), dbcnn (bigger is better), ilniqe (smaller is better)
     sample: best # to take smaller or bigger values is decided depending the metric
 
