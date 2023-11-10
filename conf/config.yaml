@@ -5,6 +5,17 @@ data:
   datasets: 'datasets'
   image_formats: ['jpeg', 'jpg']
 
+download:
+  list_all: false
+  list_finished: false
+  list_running: false
+  sort: false
+  folder: ['.', 'models']
+  download: false
+  entity: 'sdcn-nantes'
+  project: 'sdcn-shit-testing'
+  query_filter: false
+
 # put every parameter related to machine learning here: dataset size,
 # ratio between train and test, learning rate ...
 ml:
