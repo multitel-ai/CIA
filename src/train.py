@@ -16,7 +16,6 @@ from ultralytics import YOLO
 def main(cfg: DictConfig) -> None:
     data = cfg['data']
     base_path = Path(data['base']) 
-    GEN_DATA_PATH =  Path(base_path) / data['generated'] / cfg['model']['cn_use']
     
     if cfg['ml']['augmentation_percent']==0:  
         REAL_DATA = Path(base_path) / data['real'] 
@@ -24,7 +23,6 @@ def main(cfg: DictConfig) -> None:
         fold = cfg['model']['cn_use'] + str(cfg['ml']['augmentation_percent'])
         REAL_DATA = Path(base_path) / data['real'] / fold
     
-    run = "" if cfg['ml']['augmentation_percent']==0 else cfg['model']['cn_use'] + str(cfg['ml']['augmentation_percent'])
     data_yaml_path = REAL_DATA / 'data.yaml'
 
     model = YOLO("yolov8n.yaml")

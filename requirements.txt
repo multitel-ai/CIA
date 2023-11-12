@@ -20,3 +20,4 @@ wandb
 wget
 xformers
 spacy
+scikit-learn

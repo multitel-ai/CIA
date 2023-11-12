@@ -30,7 +30,7 @@ def plot_details(metrics_content, save_to):
     plt.show()
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config")
+@hydra.main(version_base=None, config_path=f"..{os.sep}conf", config_name="config")
 def main(cfg : DictConfig) -> None:
     # BASE PATHS, please used these when specifying paths
     data_path = cfg['data']
