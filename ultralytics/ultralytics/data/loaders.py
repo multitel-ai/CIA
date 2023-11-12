@@ -18,6 +18,7 @@ from PIL import Image
 from ultralytics.data.utils import IMG_FORMATS, VID_FORMATS
 from ultralytics.utils import LOGGER, is_colab, is_kaggle, ops
 from ultralytics.utils.checks import check_requirements
+from ultralytics.data.augment import LetterBox
 
 
 @dataclass
@@ -265,6 +266,7 @@ class LoadImages:
             # Read image
             self.count += 1
             im0 = cv2.imread(path)  # BGR
+            #im0 = self.pad(image = im0) ask about this
             if im0 is None:
                 raise FileNotFoundError(f'Image Not Found {path}')
             s = f'image {self.count}/{self.nf} {path}: '
@@ -374,7 +376,17 @@ def autocast_list(source):
     files = []
     for im in source:
         if isinstance(im, (str, Path)):  # filename or uri
-            files.append(Image.open(requests.get(im, stream=True).raw if str(im).startswith('http') else im))
+            if str(im).startswith('http'):
+                files.append(Image.open(requests.get(im, stream=True).raw))
+            else:
+                # ask about this
+                # with Image.open(im) as _im:
+                #     if _im.mode != 'RGB':
+                #         _im = _im.convert('RGB')
+                #     im = np.asarray(_im)[:, :, ::-1]
+                #     im = np.ascontiguousarray(im)
+                files.append(im)
+
         elif isinstance(im, (Image.Image, np.ndarray)):  # PIL or np Image
             files.append(im)
         else:

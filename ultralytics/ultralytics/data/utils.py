@@ -29,7 +29,7 @@ VID_FORMATS = 'asf', 'avi', 'gif', 'm4v', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 't
 PIN_MEMORY = str(os.getenv('PIN_MEMORY', True)).lower() == 'true'  # global pin_memory for dataloaders
 
 
-def img2label_paths(img_paths):
+def img2label_paths(img_paths): # ask about removal of / in the paths
     """Define label paths as a function of image paths."""
     label_paths = []
     for image in img_paths: 
