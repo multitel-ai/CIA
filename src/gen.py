@@ -16,7 +16,7 @@ from generators import SDCN, PromptGenerator
 # Do not let torch decide on best algorithm (we know better!)
 torch.backends.cudnn.benchmark=False 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config")
+@hydra.main(version_base=None, config_path=f"..{os.sep}conf", config_name="config")
 def main(cfg : DictConfig) -> None:
     data = cfg['data']
     base_path = os.path.join(*data['base']) if isinstance(data['base'], list) else data['base']

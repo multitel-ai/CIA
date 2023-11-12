@@ -72,7 +72,7 @@ def download_coco(data_path: Path,
 
     return image_path, annotations_path, bbx_path, caps_path
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config")
+@hydra.main(version_base=None, config_path=f"..{os.sep}conf", config_name="config")
 def main(cfg: DictConfig) -> None:
 
     # Get all paths

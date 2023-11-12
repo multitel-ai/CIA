@@ -1,82 +1,91 @@
 data:
-  base: 'data'
-  real: 'real' # should contains images/, labels/, and captions/ (captions are optional)
-  generated: 'generated'
-  datasets: 'datasets'
-  image_formats: ['jpeg', 'jpg']
+    base: "data"
+    real: "real" # should contains images/, labels/, and captions/ (captions are optional)
+    generated: "generated"
+    datasets: "datasets"
+    image_formats: ["jpeg", "jpg"]
 
 # put every parameter related to machine learning here: dataset size,
 # ratio between train and test, learning rate ...
 ml:
-  val_nb: 300
-  test_nb: 300
-  train_nb: 250
-  augmentation_percent: 0.1 # controls all aug percents parameters everywhere
-  epochs: 300
-  wandb:
-    entity: sdcn-nantes
-    project: sdcn-shit-testing
-  sampling:
-    enable: False
-    metric: brisque # brisque (smaller is better), dbcnn (bigger is better), ilniqe (smaller is better)
-    sample: best # to take smaller or bigger values is decided depending the metric
+    val_nb: 300
+    test_nb: 300
+    train_nb: 250
+    augmentation_percent: 0.1 # controls all aug percents parameters everywhere
+    augmentation_percent_baseline: 0
+    baseline: True
+    epochs: 300
+    wandb:
+        entity: sdcn-nantes
+        project: sdcn-shit-testing
+    sampling:
+        enable: false
+        metric: brisque # brisque (smaller is better), dbcnn (bigger is better), ilniqe (smaller is better)
+        sample: best # to take smaller or bigger values is decided depending the metric
 
 prompt:
-  template: vocabulary
-  modify_captions: 1
-  generation_size: 10
-  base: ["Sandra Oh", "Kim Kardashian", "rihanna ", "taylor swift"]
-  quality: "showing emotion, great realistic face, best quality, extremely detailed,"
-  modifier: "Happy man smiling"
-  negative: [
-    "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion,",
-    "distortion, bad quality, lowres, cropped, bad focus, blurry, ad compression, bad artifact,",
-    "bad pixel, deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, drawing, anime:1.4),",
-    "close up, cropped, out of frame, jpeg artifacts, ugly, duplicate, morbid, mutilated,",
-    "extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated,",
-    "extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs,",
-    "extra arms, extra legs, fused fingers, too many fingers, long neck, no cars, no people, illustration, painting,",
-    "drawing, art, sketch, anime, deformation, distorsion"
-  ]
-  negative_simple: "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion, disfigured, mutation, deformed mouth, deformed eyes, unnatural teeth, unnatural eyes, unnatural mouth, unnatural face, unnatural face expression, not human"
+    template: vocabulary
+    modify_captions: 1
+    generation_size: 10
+    base: ["Sandra Oh", "Kim Kardashian", "rihanna ", "taylor swift"]
+    quality: "showing emotion, great realistic face, best quality, extremely detailed,"
+    modifier: "Happy man smiling"
+    negative:
+        [
+            "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion,",
+            "distortion, bad quality, lowres, cropped, bad focus, blurry, ad compression, bad artifact,",
+            "bad pixel, deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, drawing, anime:1.4),",
+            "close up, cropped, out of frame, jpeg artifacts, ugly, duplicate, morbid, mutilated,",
+            "extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated,",
+            "extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs,",
+            "extra arms, extra legs, fused fingers, too many fingers, long neck, no cars, no people, illustration, painting,",
+            "drawing, art, sketch, anime, deformation, distorsion",
+        ]
+    negative_simple: "monochrome, lowres, bad anatomy, worst quality, low quality, cartoon, unrealistic, bad proportion, disfigured, mutation, deformed mouth, deformed eyes, unnatural teeth, unnatural eyes, unnatural mouth, unnatural face, unnatural face expression, not human"
 
 model:
-  use_captions: 1
-  use_labels: 0
-  augmentation_percent: 0 # not used at the moment anywhere
-  sd: runwayml/stable-diffusion-v1-5
-  cn_use: controlnet_segmentation
-  cn:
-    # Segmentation
-    - controlnet_segmentation: lllyasviel/sd-controlnet-seg
-    # Canny
-    - lllyasviel_canny: lllyasviel/sd-controlnet-canny
-    - lllyasviel_scribble_canny: lllyasviel/sd-controlnet-scribble
+    use_captions: 1
+    use_labels: 0
+    augmentation_percent: 0 # not used at the moment anywhere
+    sd: runwayml/stable-diffusion-v1-5
+    cn_use: controlnet_segmentation
+    cn:
+        # Segmentation
+        - controlnet_segmentation: lllyasviel/sd-controlnet-seg
+        # Canny
+        - lllyasviel_canny: lllyasviel/sd-controlnet-canny
+        - lllyasviel_scribble_canny: lllyasviel/sd-controlnet-scribble
 
-    # OpenPose
-    - lllyasviel_openpose: lllyasviel/sd-controlnet-openpose
-    - fusing_openpose: fusing/stable-diffusion-v1-5-controlnet-openpose
-    - frankjoshua_openpose: frankjoshua/control_v11p_sd15_openpose
+        # OpenPose
+        - lllyasviel_openpose: lllyasviel/sd-controlnet-openpose
+        - fusing_openpose: fusing/stable-diffusion-v1-5-controlnet-openpose
+        - frankjoshua_openpose: frankjoshua/control_v11p_sd15_openpose
 
-    # MediaPipeFace
-    - crucible_mediapipe_face: CrucibleAI/ControlNetMediaPipeFace
+        # MediaPipeFace
+        - crucible_mediapipe_face: CrucibleAI/ControlNetMediaPipeFace
 
-    # Coming Soon !
-    # - depth: lllyasviel/sd-controlnet-depth
-    # - hed: lllyasviel/sd-controlnet-hed
-    # - normal: lllyasviel/sd-controlnet-normal
-    # - scribble: lllyasviel/sd-controlnet-scribble
-    # - segmentation: lllyasviel/sd-controlnet-seg
-    # - mlsd: lllyasviel/sd-controlnet-mlsd
+        # Coming Soon !
+        # - depth: lllyasviel/sd-controlnet-depth
+        # - hed: lllyasviel/sd-controlnet-hed
+        # - normal: lllyasviel/sd-controlnet-normal
+        # - scribble: lllyasviel/sd-controlnet-scribble
+        # - segmentation: lllyasviel/sd-controlnet-seg
+        # - mlsd: lllyasviel/sd-controlnet-mlsd
 
-  cn_extra_settings:
-    crucible_mediapipe_face:
-      subfolder: diffusion_sd15
-  seed: 34567
-  device: cuda
+    cn_extra_settings:
+        crucible_mediapipe_face:
+            subfolder: diffusion_sd15
+    seed: 34567
+    device: cuda
 
 iqa:
-  device: cuda
-  metrics: [brisque, dbcnn, nima, ilniqe]
-  # available metrics : brisque, clipiqa+, dbcnn, ilniqe, niqe, nima, cnniqa, nrqm, pi, ilniqe, niqe
-  # read more on : https://github.com/chaofengc/IQA-PyTorch/blob/main/docs/ModelCard.md
+    device: cuda
+    metrics: [brisque, dbcnn, nima, ilniqe]
+    # available metrics : brisque, clipiqa+, dbcnn, ilniqe, niqe, nima, cnniqa, nrqm, pi, ilniqe, niqe
+    # read more on : https://github.com/chaofengc/IQA-PyTorch/blob/main/docs/ModelCard.md
+    abled: False
+
+active:
+    abled: False
+    rounds: 5
+    sel: 125 # 50 percent

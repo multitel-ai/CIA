@@ -333,7 +333,7 @@ def create_region_desc(sentence_file, annotation_file, image_id, image_file):
 
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config")
+@hydra.main(version_base=None, config_path=f"..{os.sep}conf", config_name="config")
 def main(cfg: DictConfig) -> None:
 
     # Get all paths

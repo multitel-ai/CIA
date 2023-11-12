@@ -69,7 +69,7 @@ def create_mixte_dataset(base_path: str,
             score_data[sample['metric']],
             order
         )
-        synth_images = [str((Path(base_path) / img).absolute()) for img, score in zip(synth_images, scores)]
+        synth_images = [str((Path(base_path).parent / img).absolute()) for img, score in zip(synth_images, scores)]
         # for i in range(synth_images.__len__()):
         #     print(synth_images[i], scores[i])
     else:
@@ -151,7 +151,7 @@ def create_yaml_file(save_path: Path, train: Path, val: Path, test: Path):
         yaml.dump(yaml_file, file)
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config")
+@hydra.main(version_base=None, config_path=f"..{os.sep}conf", config_name="config")
 def main(cfg : DictConfig) -> None:
     data = cfg['data']
     base_path = Path(data['base'])
