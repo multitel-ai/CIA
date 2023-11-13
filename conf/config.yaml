@@ -15,13 +15,22 @@ ml:
     augmentation_percent_baseline: 0
     baseline: True
     epochs: 300
-    wandb:
-        entity: sdcn-nantes
-        project: sdcn-shit-testing
     sampling:
         enable: false
         metric: brisque # brisque (smaller is better), dbcnn (bigger is better), ilniqe (smaller is better)
         sample: best # to take smaller or bigger values is decided depending the metric
+    
+    wandb:
+        entity: sdcn-nantes
+        project: sdcn-shit-testing
+        download:
+            list_all: false
+            list_finished: true
+            list_running: false
+            sort: false
+            folder: [".", "models"]
+            download: false
+            query_filter: false
 
 prompt:
     template: vocabulary
