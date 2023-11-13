@@ -77,29 +77,31 @@ def on_pretrain_routine_start(trainer):
 
 def on_fit_epoch_end(trainer):
     """Logs training metrics and model information at the end of an epoch."""
-    wb.run.log(trainer.metrics, step=trainer.epoch + 1 + trainer.sampling * trainer.epochs)
-    _log_plots(trainer.plots, step=trainer.epoch + 1 + trainer.sampling * trainer.epochs)
-    _log_plots(trainer.validator.plots, step=trainer.epoch + 1 + trainer.sampling * trainer.epochs)
+    wb.run.log(trainer.metrics, step=trainer.epoch + 1 ) # + trainer.sampling * trainer.epochs)
+    _log_plots(trainer.plots, step=trainer.epoch + 1 ) # + trainer.sampling * trainer.epochs)
+    _log_plots(trainer.validator.plots, step=trainer.epoch + 1 ) # + trainer.sampling * trainer.epochs)
     if trainer.epoch == 0:
-        wb.run.log(model_info_for_loggers(trainer), step=trainer.epoch + 1 + trainer.sampling * trainer.epochs)
+        wb.run.log(model_info_for_loggers(trainer), step=trainer.epoch + 1 ) # + trainer.sampling * trainer.epochs)
 
 
 def on_train_epoch_end(trainer):
     """Log metrics and save images at the end of each training epoch."""
-    wb.run.log(trainer.label_loss_items(trainer.tloss, prefix='train'), step=trainer.epoch + 1 + trainer.sampling * trainer.epochs)
-    wb.run.log(trainer.lr, step=trainer.epoch + 1 + trainer.sampling * trainer.epochs)
+    wb.run.log(trainer.label_loss_items(trainer.tloss, prefix='train'), step=trainer.epoch + 1 ) # + trainer.sampling * trainer.epochs)
+    wb.run.log(trainer.lr, step=trainer.epoch + 1 ) # + trainer.sampling * trainer.epochs)
     if trainer.epoch == 1:
-        _log_plots(trainer.plots, step=trainer.epoch + 1 + trainer.sampling * trainer.epochs)
+        _log_plots(trainer.plots, step=trainer.epoch + 1 ) # + trainer.sampling * trainer.epochs)
 
 
 def on_train_end(trainer):
     """Save the best model as an artifact at end of training."""
-    _log_plots(trainer.validator.plots, step=trainer.epoch + 1 + trainer.sampling * trainer.epochs)
-    _log_plots(trainer.plots, step=trainer.epoch + 1 + trainer.sampling * trainer.epochs)
+    _log_plots(trainer.validator.plots, step=trainer.epoch + 1 ) # + trainer.sampling * trainer.epochs)
+    _log_plots(trainer.plots, step=trainer.epoch + 1 ) # + trainer.sampling * trainer.epochs)
     art = wb.Artifact(type='model', name=f'run_{wb.run.id}_model')
     if trainer.best.exists():
         art.add_file(trainer.best)
         wb.run.log_artifact(art, aliases=['best'])
+    wb.run.finish()
+    
 
 
 callbacks = {
