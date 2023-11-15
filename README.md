@@ -189,10 +189,10 @@ Launch the training !
 ./run train
 ```
 
-### Other 
-
-- NLP is used in the Flickr30K script in order to extract good annotations from captions, run this for it to work :
+## Download and test models 
 
 ```
-python -m spacy download en_core_web_sm
+python src/download.py ml.wandb.project=your-project ml.wandb.download.download=true ml.wandb.download.list_all=true
+
+python src/test.py
 ```

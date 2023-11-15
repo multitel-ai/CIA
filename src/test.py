@@ -86,10 +86,11 @@ def main(cfg: DictConfig) -> None:
 
     results_file = folder / "results.csv"
 
-    if not os.path.isfile(results_file):
-        weights = get_weights(folder, project)
-        runs_info = build_runs_info(folder, project, weights)
-    else:
+
+    weights = get_weights(folder, project)
+    new_runs_info = build_runs_info(folder, project, weights)
+
+    if os.path.isfile(results_file):
         # read older runs
         with open(results_file, mode='r') as csv_file:
             reader = csv.DictReader(csv_file)
@@ -101,6 +102,16 @@ def main(cfg: DictConfig) -> None:
             for row in reader:
                 # Append each row as a dictionary to the list
                 runs_info.append(row)
+
+        ids = [r['run_id'] for r in runs_info]
+
+        for run in new_runs_info:
+            if run['run_id'] not in ids:
+                runs_info += [run]
+            
+    else:
+        runs_info = new_runs_info
+
 
     # create yaml test file
     test_yaml_file = test_path / 'data.yaml'
