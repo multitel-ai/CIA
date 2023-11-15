@@ -1,13 +1,14 @@
-import glob
 import hydra
 import os
 import random
-import yaml
 import json
 
 from omegaconf import DictConfig, open_dict
 from pathlib import Path
 from typing import List, Tuple
+
+from common import logger, create_yaml_file, list_images, create_files_list
+
 
 def create_mixte_dataset(base_path: str,
                          real_images_dir: str,
@@ -115,40 +116,6 @@ def sort_based_on_score(image_paths: List[str], scores: List[float], direction: 
     return sorted_image_paths, sorted_scores
 
 
-def create_files_list(image_files, txt_file_path):
-    with open(txt_file_path, 'w') as f:
-        f.write('\n'.join(image_files))
-
-
-def list_images(images_path: Path, formats: List[str], limit:int = None):
-    images = []
-    for format in formats:
-        images += [
-            *glob.glob(str(images_path.absolute()) + f'/*.{format}')
-        ]
-    return images[:limit]
-
-
-def create_yaml_file(save_path: Path, train: Path, val: Path, test: Path):
-    """
-    Construct the yaml file
-
-    :param pathlib.Path txt_dir: path used to create the txt files
-    :param pathlib.Path yaml_dir: path used to create the yaml file
-
-    :return: None
-    :rtype: NoneType
-    """
-
-    yaml_file = {
-        'train': str(train.absolute()),
-        'val': str(val.absolute()),
-        'test': str(test.absolute()),
-        'names': {0: 'person'}
-    }
-
-    with open(save_path, 'w') as file:
-        yaml.dump(yaml_file, file)
 
 
 @hydra.main(version_base=None, config_path=f"..{os.sep}conf", config_name="config")
