@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 import mediapipe as mp
 import numpy as np
 import os
+import yaml
+import glob
+from pathlib import Path
 
 from mediapipe.framework.formats import landmark_pb2
 from mediapipe import solutions
@@ -168,3 +171,39 @@ def bbox_min_max_to_center_dims(x_min, x_max, y_min, y_max, image_width, image_h
     width = (x_max - x_min) / image_width
     height = (y_max - y_min) / image_height
     return x_center, y_center, width, height
+
+
+def create_files_list(image_files, txt_file_path):
+    with open(txt_file_path, 'w') as f:
+        f.write('\n'.join(image_files))
+
+
+def list_images(images_path: Path, formats: List[str], limit:int = None):
+    images = []
+    for format in formats:
+        images += [
+            *glob.glob(str(images_path.absolute()) + f'/*.{format}')
+        ]
+    return images[:limit]
+
+
+def create_yaml_file(save_path: Path, train: Path, val: Path, test: Path):
+    """
+    Construct the yaml file
+
+    :param pathlib.Path txt_dir: path used to create the txt files
+    :param pathlib.Path yaml_dir: path used to create the yaml file
+
+    :return: None
+    :rtype: NoneType
+    """
+
+    yaml_file = {
+        'train': str(train.absolute()),
+        'val': str(val.absolute()),
+        'test': str(test.absolute()),
+        'names': {0: 'person'}
+    }
+
+    with open(save_path, 'w') as file:
+        yaml.dump(yaml_file, file)

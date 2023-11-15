@@ -103,7 +103,7 @@ class Downloader:
         runs_df.to_csv(save_path)
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config")
+@hydra.main(version_base=None, config_path=f"..{os.sep}conf", config_name="config")
 def main(cfg: DictConfig) -> None:
     download_params = cfg['ml']['wandb']['download']
     entity = cfg['ml']['wandb']['entity']
