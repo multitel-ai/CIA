@@ -1,9 +1,8 @@
-# Data Augmentation with Stable Diffusion for Object Detection using YOLOv8
+# CIA: Controllable Image Augmentation Framework based on Stable Diffusion Synthesis
 
-This is a data generation framework that uses [Stable Diffusion](https://huggingface.co/blog/stable_diffusion)
-with [ControlNet](https://huggingface.co/blog/train-your-controlnet).
+This is a data generation framework that uses [Stable Diffusion](https://huggingface.co/blog/stable_diffusion) with [ControlNet](https://huggingface.co/blog/train-your-controlnet), to do Data Augmentation for Object Detection using [YOLOv8](https://github.com/ultralytics/ultralytics)
+
 Models can be trained using a mix of real and generated data. They can also be logged and evaluated.
-
 
 <img src="docs/images/general_pipeline.png" />
 
