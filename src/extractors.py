@@ -24,7 +24,7 @@ from mediapipe import ImageFormat
 from PIL import Image
 from torchvision.transforms import ToPILImage
 from typing import Tuple
-
+from controlnet_aux.processor import Processor
 import sys
 import os
 sys.path.append(os.path.join(os.getcwd(), "ultralytics"))
@@ -142,27 +142,18 @@ class OpenPose:
 
 
 class MediaPipeFace:
-    def __init__(self,
-                 # put this in the config.yaml file !
-                 model: str = '../nsw-da-object-detection/ressources/mediapipe/face_landmarker_v2_with_blendshapes.task',
-                 **kwargs):
-        self.base_options = python.BaseOptions(model_asset_path = model)
-        self.options = vision.FaceLandmarkerOptions(base_options = self.base_options,
-                                            output_face_blendshapes = True,
-                                            output_facial_transformation_matrixes = True,
-                                            num_faces = 1)
-        self.detector = vision.FaceLandmarker.create_from_options(self.options)
+    def __init__(self, **kwargs):
+        pass
 
     def extract(self, image: Image) -> Image:
-        image = np.array(image)
-        image_mp = MpImage(image_format = ImageFormat.SRGB, data = image)
-        detection_result = self.detector.detect(image_mp)
+        from controlnet_aux.processor import Processor
 
-        annotated_image = draw_landmarks_on_image(image, detection_result)
-        annotated_image = cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR)
-        annotated_image = Image.fromarray(annotated_image)
+        processor_id = 'mediapipe_face'
+        processor = Processor(processor_id)
 
-        return annotated_image
+        processed_image = processor(image, to_pil=True)
+
+        return processed_image
 
     def __str__(self) -> str:
         return 'Extractor(mediapipe_face)'
