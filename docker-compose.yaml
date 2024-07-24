@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  data-quality:
+    shm_size: '1024m'
+    container_name: cia-gen
+    build:
+      context: .
+      dockerfile: ${DOCKERFILE}
+      args:
+        - USER_ID=$USER_ID
+        - GROUP_ID=$GROUP_ID
+    image: cia-gen
+    tty: true
+    volumes:
+      - .:/gen_data
+      - /data:/data
+      - ../vscode/data-quality:/home/user/vscode-server
+    user: ${USER_ID}:${GROUP_ID}
+    ports:
+      - 7799:8888
+    environment:
+      - DATA_DIR=/gen_data/data
+      - NVIDIA_VISIBLE_DEVICES=all
+    runtime: nvidia
+    working_dir: /gen_data
